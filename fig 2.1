@@ -1,0 +1,12 @@
+# Sept 1 2019, sunny
+# plot figure 2.1 (page 19)
+
+x= c(0:10)
+y= dpois(x= x, lambda= 2.1)
+plot(x= x, y= y, type= 'h', ylim= c(0, 0.25),
+     xlab= 'y', ylab= expression(paste("p(y|",theta,"=2.1)")))
+
+x= c(0: 100)
+y= dpois(x= x, lambda= 21)
+plot(x= x, y= y, type= 'h', ylim= c(0, 0.10),
+     xlab= 'y', ylab= expression(paste("p(y|",theta,"=21)")))
