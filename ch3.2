@@ -1,0 +1,23 @@
+# Sept 2 2019
+# p49-50
+
+set.seed(21205)
+a=2; b= 1
+sy1= 217; n1= 111
+sy2= 66; n2= 44
+theta1= rgamma(1e6, a+ sy1, b+n1)
+theta2= rgamma(1e6, a+ sy2, b+n2)
+mean(theta1> theta2) # 0.972383
+
+ytilde.theta1= rpois(1e6, theta1)
+ytilde.theta2= rpois(1e6, theta2)
+mean(ytilde.theta1== ytilde.theta2) 
+# 0.217932
+mean(ytilde.theta1> ytilde.theta2)
+# 0.482003
+
+a1= rnbinom(n=1e6, size= a+sy1, mu= (a+sy1)/(b+n1))
+a2= rnbinom(n=1e6, size= a+sy2, mu= (a+sy2)/(b+n2))
+mean(a1== a2) # 0.217771
+mean(a1> a2) # 0.48135
+
