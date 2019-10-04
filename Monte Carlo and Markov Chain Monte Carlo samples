@@ -1,0 +1,68 @@
+# Oct 4 2019, sunny
+# to reproduce figures in chap. 6, section 6.6 (page 99)
+
+
+# Monte Carlo sampling
+delta= c(1,2,3)
+mu= c(-3,0,3)
+sigmaSq= c(1/3, 1/3, 1/3)
+delta.prob= c(0.45, 0.10, 0.45)
+
+S= 10000
+set.seed(21217)
+delta.MC.mat= matrix(rmultinom(n= S, size= 1, prob= delta.prob),
+                     nrow= 3, ncol= S, byrow= F)
+
+theta.MC= rep(NA, S)
+for(s in 1: S) {
+    index= sum(delta.MC.mat[,s]* delta)
+    theta.MC[s]= rnorm(n= 1, mean= mu[index], sd= sqrt(sigmaSq[index]))
+}
+
+# MCMC sampling
+mcmc.mat= matrix(nrow= S, ncol= 2)
+# columns in the order of (delta, theta) 
+mcmc.mat[1, ]= param= c(1, 0)
+
+set.seed(85004)
+for(s in 2: S) {
+    del= param[1]
+    # p(theta|delta)
+    param[2]= rnorm(n= 1, mean= mu[del], sd= sqrt(sigmaSq[del]))
+    # p(delta|theta)
+    up= c(delta.prob[1]* dnorm(param[2], mean= mu[1], sd= sqrt(sigmaSq[1])),
+          delta.prob[2]* dnorm(param[2], mean= mu[2], sd= sqrt(sigmaSq[2])),
+          delta.prob[3]* dnorm(param[2], mean= mu[3], sd= sqrt(sigmaSq[3])))
+    
+    down= delta.prob[1]* dnorm(param[2], mean= mu[1], sd= sqrt(sigmaSq[1]))+ 
+          delta.prob[2]* dnorm(param[2], mean= mu[2], sd= sqrt(sigmaSq[2]))+ 
+          delta.prob[3]* dnorm(param[2], mean= mu[3], sd= sqrt(sigmaSq[3]))
+    prob= up/ down
+    param[1]= sum(delta* rmultinom(n= 1, size= 1, prob= prob))
+    mcmc.mat[s, ]= param    
+}
+
+par(mfrow=c(1,2))
+
+# plot for MC
+hist(theta.MC, prob= T, 
+     xlab= expression(theta),
+     ylab= expression(paste("p(", theta, ")")), 
+     main= "Monte Carlo approximation (S=10000)",
+     ylim= c(0, 0.4))
+
+set.seed(21201)
+components= sample(c(1:3), prob= delta.prob, size= S, replace=TRUE)
+samples= rnorm(n= S, mean= mu[components], sd= sqrt(sigmaSq[components]))
+
+lines(density(samples), 
+      lwd = 2, col = "chocolate3")
+
+# plot for MCMC
+hist(mcmc.mat[,2], prob= T,
+     xlab= expression(theta),
+     ylab= expression(paste("p(", theta, ")")), 
+     main= "Markov Chain Monte Carlo approximation (S=10000)",
+     ylim= c(0, 0.4))
+lines(density(samples), 
+      lwd = 2, col = "chocolate3")
