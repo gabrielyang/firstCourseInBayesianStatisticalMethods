@@ -69,5 +69,6 @@ lines(density(samples),
       lwd = 2, col = "chocolate3")
       
 # traceplot of S Gibbs samples
+# the traceplot shows the "stickiness" of MCMC samples
 par(mfrow=c(1,1))
 plot(x= c(1:S), y= mcmc.mat[,2])
