@@ -67,3 +67,7 @@ hist(mcmc.mat[,2], prob= T,
      ylim= c(0, 0.4))
 lines(density(samples), 
       lwd = 2, col = "chocolate3")
+      
+# traceplot of S Gibbs samples
+par(mfrow=c(1,1))
+plot(x= c(1:S), y= mcmc.mat[,2])
