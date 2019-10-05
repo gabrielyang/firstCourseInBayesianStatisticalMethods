@@ -1,5 +1,6 @@
 # Oct 4 2019, sunny
 # to reproduce figures in chap. 6, section 6.6 (page 99)
+# the approximation will improve with more iterations of Gibbs sampler (e.g., S= 100000)
 
 
 # Monte Carlo sampling
@@ -22,7 +23,13 @@ for(s in 1: S) {
 # MCMC sampling
 mcmc.mat= matrix(nrow= S, ncol= 2)
 # columns in the order of (delta, theta) 
+# initialize the values for (delta, theta)
 mcmc.mat[1, ]= param= c(1, 0)
+
+#set.seed(21201)
+#delta0= sample(c(1,2,3), size= 1, replace= T)
+#c(delta0, rnorm(n= 1, mean= mu[delta0], sd= sqrt(sigmaSq[delta0])))
+
 
 set.seed(85004)
 for(s in 2: S) {
