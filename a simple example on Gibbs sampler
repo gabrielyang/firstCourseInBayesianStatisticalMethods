@@ -34,3 +34,10 @@ lines(density(theta.mat[,1]))
 
 hist(theta.ref[,2], prob= T)
 lines(density(theta.mat[,2]))
+
+# make trace plots
+plot(as.ts(theta.mat[,1]))
+plot(as.ts(theta.mat[,2]))
+
+plot(as.ts(theta.ref[,1]))
+plot(as.ts(theta.ref[,2]))
