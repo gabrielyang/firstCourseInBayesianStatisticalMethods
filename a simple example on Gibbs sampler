@@ -1,0 +1,35 @@
+# Oct 18 2019, sunny and cool
+
+
+library("MASS")
+S= 10^5
+
+rho= 0.8
+Sigma= matrix(c(1, rho, rho, 1), ncol= 2, byrow= T)
+Sigma
+# S Monte Carlo simulations
+set.seed(90095)
+theta.ref= mvrnorm(n= S, mu= c(y1, y2), Sigma= Sigma)
+
+y1= y2= 0
+
+# implement Gibbs sampler
+theta.mat= array(0, c(S, 2))
+
+# initialize theta vector
+theta= c(0, 0)
+
+set.seed(21205)
+for(s in 1: S) {
+    theta[1]= rnorm(n= 1, mean= y1+ rho*(theta[2]- y2), sd= sqrt(1-rho^2))
+    theta[2]= rnorm(n= 1, mean= y2+ rho*(theta[1]- y1), sd= sqrt(1-rho^2))
+    theta= c(theta[1], theta[2])
+    theta.mat[s, ]= theta
+    
+}
+
+hist(theta.ref[,1], prob= T)
+lines(density(theta.mat[,1]))
+
+hist(theta.ref[,2], prob= T)
+lines(density(theta.mat[,2]))
