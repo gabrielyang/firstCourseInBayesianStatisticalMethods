@@ -41,3 +41,43 @@ plot(as.ts(theta.mat[,2]))
 
 plot(as.ts(theta.ref[,1]))
 plot(as.ts(theta.ref[,2]))
+
+# example on BDA textbook, p278
+library("MASS")
+S= 2*10^4
+Sigma= matrix(c(1,0,0,1), ncol= 2, byrow= T)
+theta.ref= mvrnorm(n= S, mu= c(0, 0), Sigma= Sigma)
+
+
+log.p = function(x, y, Sigma){
+    -1/2* log(det(2*pi*Sigma)) -
+        1/2* t(x - y) %*% solve(Sigma) %*% (x - y)
+}
+
+# initialize theta
+post.theta= array(0, c(S, 2))
+theta= c(rnorm(n= 2, mean= 0, sd= 1))
+Sigma.2= matrix(0.2^2*c(1,0,0,1), ncol= 2, byrow= T)
+Sigma.2
+
+accept.count= 0
+set.seed(21204)
+for(s in 1: S) {
+    # propose new theta
+    theta.star= mvrnorm(n= 1, mu= theta, Sigma= Sigma.2)
+    log.r= log.p(x= theta.star, y= c(0,0), Sigma= Sigma)- 
+           log.p(x= theta, y= c(0,0), Sigma= Sigma)
+    if(runif(n=1) < exp(log.r)) {
+        theta= theta.star
+        accept.count= accept.count+ 1
+    }
+    post.theta[s,]= theta
+}
+accept.count/S
+
+hist(post.theta[,1], prob= T)
+lines(density(theta.ref[,1]))
+
+hist(post.theta[,2], prob= T)
+lines(density(theta.ref[,2]))
+
