@@ -84,3 +84,41 @@ acf(thin.post.beta3, xlab= "lag/10",
     main= expression(paste("Series of thinned ", beta[3])))
 effectiveSize(post.beta)
 
+
+lambdaHat.mat= matrix(NA, nrow= nrow(dat), ncol= S)
+
+for(i in 1: nrow(dat)) {
+    for(s in 1: S) {
+        lambdaHat.mat[i, s]= exp(X[i,]%*% post.beta[s,])
+    }
+}
+
+lambdaHat.mat.disp= matrix(NA, nrow= nrow(dat), ncol= 3)
+
+for(i in 1: nrow(dat)) {
+    lambdaHat.mat.disp[i, 1]= mean(lambdaHat.mat[i,])
+    ci= HPDinterval(as.mcmc(lambdaHat.mat[i,]))
+    lambdaHat.mat.disp[i, 2]= ci[1]
+    lambdaHat.mat.disp[i, 3]= ci[2]
+}
+
+# display results
+lambdaHat.mat.disp
+
+# fig 10.6, on page 182
+plot(x= x, y= y, pch= 1, xlab= "age", ylab= "number of offsprings",
+     col= "blue", main= "")
+points(x= x, y= lambdaHat.mat.disp[,1], col= "orange", pch= 2)
+
+# add HPD intervals
+arrows(x, lambdaHat.mat.disp[,2], x, lambdaHat.mat.disp[,3], length=0.05, angle=90, code=3, col= "orange")
+lines(x= x[order(x)], y= lambdaHat.mat.disp[,1][order(x)], col= "grey", type= 'l')
+lines(x= x[order(x)], y= lambdaHat.mat.disp[,2][order(x)], col= "grey", type= 'l')
+lines(x= x[order(x)], y= lambdaHat.mat.disp[,3][order(x)], col= "grey", type= 'l')
+
+legend("topright", legend= c(expression(paste("(",x[i],",",y[i],")")), 
+                             expression(paste("(",x[i], ",", 
+                                              hat(lambda[i]),")"))),
+       col= c("blue", "orange"), pch= c(1, 2), bty= 'n')
+
+
