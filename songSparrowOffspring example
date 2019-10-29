@@ -1,0 +1,85 @@
+# Oct 28 2019
+# reproduce the analysis for song sparrow offspring data in PDF chapter 10
+
+
+# log of posterior density for Poisson sampling model and normal priors
+log.post= function(beta) {
+    # sum(dpois(y, lambda=exp(X%*%beta),log=T))+dnorm(beta[1], mean= 0, sd= 10, log=T)+dnorm(beta[2], mean= 0, sd= 10, log=T)+dnorm(beta[3], mean= 0, sd= 10, log=T)
+    -sum(exp(X%*% beta))+sum(y* X%*% beta)+
+        dnorm(beta[1], mean= 0, sd= 10, log=T)+
+        dnorm(beta[2], mean= 0, sd= 10, log=T)+
+        dnorm(beta[3], mean= 0, sd= 10, log=T)
+}
+
+# Gaussian approx. 
+# to obtain initial values for beta, and proposal variance
+opt = optim(par = c(0, 0, 0),  # Initial value(s)
+            fn = log.post,  # Function to maximize
+            control = list(fnscale = -1),
+            hessian = TRUE,  # Compute the Hessian
+            method = "L-BFGS-B", lower = c(-Inf, -Inf, -Inf), 
+            upper = c(+Inf, +Inf, +Inf))
+# Posterior mode:
+post_mode = opt$par
+post_mode
+
+# variance
+post_var= solve(-opt$hessian)
+post_var 
+
+library("MASS")
+dat= read.table(file= "sparrowdata.txt", header= T)
+y= dat$offspring
+x= dat$age
+# construct design matrix
+X= cbind(rep(1, nrow(dat)), x, x^2)
+p= dim(X)[2]; p
+
+# number of simulations
+S= 10^4
+# initialize beta and proposal variance
+beta= rep(0, p)
+var.prop= var(log(y+1/2))* solve(t(X)%*% X)
+var.prop
+
+# prior mean and variance
+pmean.beta= rep(0, p)
+psd.beta= rep(10, p)
+
+count= 0
+
+post.beta= matrix(0, nrow= S, ncol= p)
+
+set.seed(1)
+
+for(s in 1: S) {
+    beta.star= mvrnorm(n= 1, mu= beta, Sigma= var.prop)
+    
+    log.r= sum(dpois(y, lambda= exp(X%*% beta.star), log= T))-sum(dpois(y, lambda= exp(X%*% beta), log= T))+sum(dnorm(beta.star, mean= pmean.beta, sd= psd.beta, log=T))-sum(dnorm(beta, mean= pmean.beta, sd= psd.beta, log=T))
+    #log.r= log.post(beta= beta.star)- log.post(beta= beta) # same as above
+        
+    if(log(runif(n=1, min= 0, max= 1))<log.r) {
+        beta= beta.star
+        count= count+1
+    }
+    post.beta[s, ]= beta 
+}
+
+summary(post.beta)
+
+# acceptance rate
+count/S # 0.4291
+
+# reproduce fig 10.5
+plot(as.ts(post.beta[,3]), xlab= "iteration", 
+     ylab= expression(paste(beta[3])))
+acf(post.beta[,3], xlab= "lag", 
+    main= expression(paste("Series of ", beta[3])))
+
+# thin the correlated posterior draws by taking out every 10th draws in the
+# original chain
+thin.post.beta3= post.beta[,3][seq(from= 1, to= S, by= 10)]
+acf(thin.post.beta3, xlab= "lag/10",
+    main= expression(paste("Series of thinned ", beta[3])))
+effectiveSize(post.beta)
+
