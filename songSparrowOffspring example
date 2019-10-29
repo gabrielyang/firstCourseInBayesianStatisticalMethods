@@ -55,6 +55,7 @@ set.seed(1)
 for(s in 1: S) {
     beta.star= mvrnorm(n= 1, mu= beta, Sigma= var.prop)
     
+    # log of acceptance ratio
     log.r= sum(dpois(y, lambda= exp(X%*% beta.star), log= T))-sum(dpois(y, lambda= exp(X%*% beta), log= T))+sum(dnorm(beta.star, mean= pmean.beta, sd= psd.beta, log=T))-sum(dnorm(beta, mean= pmean.beta, sd= psd.beta, log=T))
     #log.r= log.post(beta= beta.star)- log.post(beta= beta) # same as above
         
