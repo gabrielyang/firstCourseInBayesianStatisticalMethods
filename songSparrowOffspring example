@@ -97,7 +97,9 @@ lambdaHat.mat.disp= matrix(NA, nrow= nrow(dat), ncol= 3)
 
 for(i in 1: nrow(dat)) {
     lambdaHat.mat.disp[i, 1]= mean(lambdaHat.mat[i,])
-    ci= HPDinterval(as.mcmc(lambdaHat.mat[i,]))
+    #ci= HPDinterval(as.mcmc(lambdaHat.mat[i,]))
+    # 2.5% and 97.5% posterior quantile
+    ci= quantile(lambdaHat.mat[i,], c(0.025, 0.975))
     lambdaHat.mat.disp[i, 2]= ci[1]
     lambdaHat.mat.disp[i, 3]= ci[2]
 }
