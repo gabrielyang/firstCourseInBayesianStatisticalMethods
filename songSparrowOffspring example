@@ -71,7 +71,7 @@ summary(post.beta)
 # acceptance rate
 count/S # 0.4291
 
-# reproduce fig 10.5
+# reproduce fig 10.5, p181
 plot(as.ts(post.beta[,3]), xlab= "iteration", 
      ylab= expression(paste(beta[3])))
 acf(post.beta[,3], xlab= "lag", 
