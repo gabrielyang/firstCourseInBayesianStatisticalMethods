@@ -1,0 +1,36 @@
+# Oct 29 2019
+
+# the target dist. to approximate is expon(lambda= 1)
+target = function(x){
+    return(ifelse(x<0, 0, exp(-x)))
+}
+
+S= 10^4
+post.x= array(0, S)
+delta= 5/2
+# initialize x
+x= 0
+
+# try J(theta.star|theta^s) w/ uniform(theta^s-delta, theta^s+delta) and
+# normal(theta^s, sd),
+# where delta and sd controls the pace of walk
+set.seed(21204)
+for(s in 1: S){
+    #x.star= rnorm(n= 1, mean= x, sd= 2)
+    x.star= runif(n= 1, min= x- delta, max= x+ delta)
+    # acceptance ratio
+    r = target(x.star)/ target(x) 
+    
+    if(runif(n= 1, min= 0, max= 1)< r){
+        x= x.star       # accept move with probabily min(1,A)
+    } 
+    post.x[s]= x
+}
+
+plot(as.ts(post.x))
+hist(post.x, prob= T, xlab= "x", 
+     main= "Histogram of x values from random-walk Metropolis sampler (S=10000)")
+lines(x= seq(from= 0, to= 10, length.out= 1000),
+      y= exp(-seq(from= 0, to= 10, length.out= 1000)),
+      col= "red")
+
