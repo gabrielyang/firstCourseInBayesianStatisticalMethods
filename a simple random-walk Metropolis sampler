@@ -3,6 +3,7 @@
 # the target dist. to approximate is expon(lambda= 1)
 target = function(x){
     return(ifelse(x<0, 0, exp(-x)))
+    # return(dexp(x= x, rate= 1))
 }
 
 S= 10^4
