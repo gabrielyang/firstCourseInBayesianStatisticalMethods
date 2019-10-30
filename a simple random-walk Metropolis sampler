@@ -11,9 +11,11 @@ delta= 5/2
 # initialize x
 x= 0
 
-# try J(theta.star|theta^s) w/ uniform(theta^s-delta, theta^s+delta) and
-# normal(theta^s, sd),
+# try 2 different proposal dist. J(theta.star|theta^s),
+# (1) uniform(theta^s -delta, theta^s+ delta);
+# (2) normal(theta^s, sd)
 # where delta and sd controls the pace of walk
+
 set.seed(21204)
 for(s in 1: S){
     #x.star= rnorm(n= 1, mean= x, sd= 2)
