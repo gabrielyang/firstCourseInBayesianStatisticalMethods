@@ -1,5 +1,8 @@
 # Oct 29 2019
 
+# datasets for PDF textbook
+http://www2.stat.duke.edu/~pdh10/FCBS/Replication/
+
 # the target dist. to approximate is expon(lambda= 1)
 target = function(x){
     return(ifelse(x<0, 0, exp(-x)))
