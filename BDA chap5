@@ -1,0 +1,36 @@
+# Nov 6 2019, sunny
+
+
+# datasets in book CDA
+# http://users.stat.ufl.edu/~aa/cda/data.html
+dat= read.table("horseshoecrab.txt", header= T)
+
+# 5.2.3
+fit1= glm(y~ width, family= "binomial", data= dat)
+summary(fit1)
+
+cov= vcov(fit1); cov
+x= c(1, 26.5)
+xb= x%*%coef(fit1); xb
+expit(xb)
+
+x.1= matrix(x, nrow= 1); x.1
+var= x%*% cov%*% x
+var # 0.03560607
+var.1= x.1%*% cov%*% t(x.1) 
+var.1 # 0.03560607
+
+as.numeric(xb)+ c(-1,1)* qnorm(0.975)* sqrt(as.numeric(var)) # 0.455956 1.195630
+# convert to prob.
+expit(as.numeric(xb)+ c(-1,1)* qnorm(0.975)* sqrt(as.numeric(var))) # 0.6120544 0.7677464
+
+
+# 5.2.4
+dat$ctred.width= dat$width- mean(dat$width)
+dat$ctred.width.sq= (dat$ctred.width)^2
+
+fit2.1= glm(y~ ctred.width, family= "binomial", data= dat)
+fit2.2= glm(y~ ctred.width+ ctred.width.sq, family= "binomial", data= dat)
+
+anova(fit2.1, fit2.2)
+-2*(logLik(fit2.1)- logLik(fit2.2)) # 0.8254191
