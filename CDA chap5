@@ -35,7 +35,7 @@ fit2.2= glm(y~ ctred.width+ ctred.width.sq, family= "binomial", data= dat)
 anova(fit2.1, fit2.2)
 -2*(logLik(fit2.1)- logLik(fit2.2)) # 0.8254191
 
-
+# 5.2.6
 logit= function(x) {
     return(log(x/(1-x)))
 }
