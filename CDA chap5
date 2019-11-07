@@ -34,3 +34,20 @@ fit2.2= glm(y~ ctred.width+ ctred.width.sq, family= "binomial", data= dat)
 
 anova(fit2.1, fit2.2)
 -2*(logLik(fit2.1)- logLik(fit2.2)) # 0.8254191
+
+
+logit= function(x) {
+    return(log(x/(1-x)))
+}
+
+logitWaldStat= function(x, n) {
+    return(logit(x)^2* n* x*(1-x))
+}
+
+logitWaldStat(x= c(23, 24)/25, n= 25)
+
+logLikeli= function(y, n) {
+    return(2* (y*log(y/(n*1/2))+ (n-y)*log((n-y)/(n-n*1/2))) )
+}
+
+logLikeli(y= c(23,24), n= 25)
