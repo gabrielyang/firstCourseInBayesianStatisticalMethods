@@ -1,5 +1,5 @@
 # Nov 10 2019, warm
-# section 9.1.1
+# section 9.1.1, p153-154
 
 x1= rep(1, 12)
 # 0 for running grp, 1 for aerobics grp
@@ -8,6 +8,15 @@ x3= c(23,22,22,25,27,20,31,23,27,28,22,24)
 x4= x2* x3
 y= c(-0.87,-10.74,-3.27,-1.97,7.50, -7.25,
      17.05,4.96,10.40,11.05,0.26,2.51)
+     
+
+# Fig. 9.1, on page 150
+plot(x= x3[1:6], y= y[1:6], col= "blue", 
+     xlim= c(20,31), ylim= c(-10, 18),
+     ylab= "change in maximal oxygen uptake", xlab= "age")
+points(x= x3[7:12], y= y[7:12], col= "orange")
+     
+     
 # assemble design matrix
 X= cbind(x1, x2, x3, x4)
 
