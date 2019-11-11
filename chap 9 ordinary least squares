@@ -1,0 +1,28 @@
+# section 9.1.1
+
+x1= rep(1, 12)
+# 0 for running grp, 1 for aerobics grp
+x2= c(rep(0, 6), rep(1, 6))
+x3= c(23,22,22,25,27,20,31,23,27,28,22,24)
+x4= x2* x3
+y= c(-0.87,-10.74,-3.27,-1.97,7.50, -7.25,
+     17.05,4.96,10.40,11.05,0.26,2.51)
+# assemble design matrix
+X= cbind(x1, x2, x3, x4)
+
+# XtX
+t(X)%*% X
+
+# Xty
+t(X)%*% y
+
+beta.hat= solve(t(X)%*% X)%*% t(X) %*% y
+beta.hat
+
+SSR= sum((y-X%*% beta.hat)^2)
+SSR
+# s2= SSR/(n-p)
+s2= SSR/(nrow(X)- ncol(X)); s2
+
+vcov= solve(t(X)%*% X)* s2
+sqrt(diag(vcov))
