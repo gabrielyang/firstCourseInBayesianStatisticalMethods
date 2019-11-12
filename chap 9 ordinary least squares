@@ -38,3 +38,26 @@ s2= SSR/(nrow(X)- ncol(X)); s2
 
 vcov= solve(t(X)%*% X)* s2
 sqrt(diag(vcov))
+
+
+
+S= 10^4
+g= length(y); nu0= 1; s20= 8.54
+n= dim(X)[1]; p= dim(X)[2]
+
+Hg= g/(1+g)* X%*% solve(t(X) %*% X)%*% t(X)
+SSRg= t(y) %*% (diag(1, nrow= n)- Hg)%*% y
+
+s2= 1/rgamma(S, (nu0+ n)/2, (nu0*s20+ SSRg)/2 )
+Vb= g* solve(t(X)%*% X)/(g+ 1)
+Eb= Vb %*% t(X)%*% y
+
+# t(chol(Vb))%*% chol(Vb)= Vb
+# all.equal(t(chol(Vb))%*% chol(Vb), Vb) # true
+
+E= matrix(rnorm(n= S*p, mean= 0, sd= sqrt(s2)), nrow= S, ncol= p)
+dim(E) # 10000     4; S-by-p
+beta= t(t(E %*% chol(Vb))+ c(Eb))
+# beta.1= t(t(chol(Vb)) %*% t(E)+ c(Eb))
+# all.equal(beta, beta.1) # true
+
