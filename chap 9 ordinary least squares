@@ -1,5 +1,7 @@
 # Nov 10 2019, warm
-# section 9.1.1, p153-154
+# http://www.medicine.mcgill.ca/epidemiology/Joseph/courses/EPIB-621/interaction.pdf
+
+# PDF section 9.1.1, p153-154
 
 x1= rep(1, 12)
 # 0 for running grp, 1 for aerobics grp
