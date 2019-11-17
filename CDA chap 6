@@ -17,7 +17,7 @@ df$trt= rep(c(1,0), 8)
 df$n= df$success+ df$failure
 
 # note the two ways for running logistic reg. for binomial data
-# construct a model with center and trt 
+# construct a model w/ center and trt 
 myfit = glm((success/ n)~ center+ trt, data= df, 
             family="binomial", weights= df$n)
 summary(myfit)
