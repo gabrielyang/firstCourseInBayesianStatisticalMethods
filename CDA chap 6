@@ -17,6 +17,7 @@ df$trt= rep(c(1,0), 8)
 df$n= df$success+ df$failure
 
 # note the two ways for running logistic reg. for binomial data
+# construct a model with center and trt 
 myfit = glm((success/ n)~ center+ trt, data= df, 
             family="binomial", weights= df$n)
 summary(myfit)
@@ -35,3 +36,12 @@ summary(myfit2)
  
 # run CMH test 
 mantelhaen.test(beitler, correct=FALSE)
+
+# construct a model w/ center only
+myfit.ref= glm((success/ n)~ center, data= df, 
+               family="binomial", weights= df$n)
+anova(myfit.ref, myfit)
+
+require("lmtest")
+lrtest(myfit.ref, myfit) # stat= 6.67, p-value=0.010
+
