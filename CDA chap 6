@@ -1,6 +1,6 @@
 # Nov 17 2019, cloudy
 # Cat. Data Analysis textbook, chapter 6, section 6.4.1-6.4.3, p226-228
-# on CMH test for testing conditional independence
+# on CMH test for testing conditional independence b/t X and Y
 # H0: beta= 0
 
 beitler= c(11,10,25,27,16,22,4,10,14,7,5,12,2,1,14,16,6,0,11,12,1,0,10,10,1,1,4,8,4,6,2,1)
@@ -16,12 +16,16 @@ df$center= as.factor(df$center)
 df$trt= rep(c(1,0), 8)
 df$n= df$success+ df$failure
 
+# note the two ways for running logistic reg. for binomial data
 myfit = glm((success/ n)~ center+ trt, data= df, 
             family="binomial", weights= df$n)
 summary(myfit)
 
+# calc. test stat. and p-value
 z= (coefficients(myfit)[9]/ sqrt(vcov(myfit)[9,9]))^2; z
+# chi-sq test
 pchisq(z, df= 1, lower.tail= F)
+# Z test
 2*pnorm(sqrt(z), lower.tail = F)
 
 # can get same results w/ the following
