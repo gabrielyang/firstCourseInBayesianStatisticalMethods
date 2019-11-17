@@ -2,6 +2,7 @@
 # Cat. Data Analysis textbook, chapter 6, section 6.4.1-6.4.3, p226-228
 # on CMH test for testing conditional independence b/t X and Y
 # H0: beta= 0
+# http://users.stat.ufl.edu/~aa/cda/R_web.pdf
 
 beitler= c(11,10,25,27,16,22,4,10,14,7,5,12,2,1,14,16,6,0,11,12,1,0,10,10,1,1,4,8,4,6,2,1)
 beitler <- array(beitler, dim=c(2,2,8))
