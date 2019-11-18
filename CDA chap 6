@@ -43,6 +43,10 @@ myfit.ref= glm((success/ n)~ center, data= df,
                family="binomial", weights= df$n)
 anova(myfit.ref, myfit)
 
+# LR test
 require("lmtest")
 lrtest(myfit.ref, myfit) # stat= 6.67, p-value=0.010
+
+# score test for coeff.
+anova(myfit, test= "Rao")
 
