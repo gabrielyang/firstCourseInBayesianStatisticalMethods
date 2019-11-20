@@ -1,0 +1,99 @@
+# Nov 19 2019, warm like spring
+# https://darrenjw.wordpress.com/2012/06/04/metropolis-hastings-mcmc-when-the-proposal-and-target-have-differing-support/
+# on truncated Metropolis Hastings random walk sampler
+# the target dist. is expon(lambda= 1)
+# proposal dist. is normal truncated to x>0
+
+
+# on truncated sampler 
+# (proposal dist has a diff. support than target dist.)
+S= 10^6
+
+# the target dist. is expon(lambda= 1)
+target = function(x){
+    # return(ifelse(x<0, 0, exp(-x)))
+    return(dexp(x= x, rate= 1))
+}
+
+method1= function(S) {
+    xvec= numeric(S)
+    x=1
+    for (s in 1:S) {
+        # note here we use a diff proposal
+        xstar= x+ rnorm(n= 1, mean= 0, sd= 1)
+        
+        r= target(xstar)/ target(x)
+        
+        if (runif(n= 1, min= 0, max= 1)< r) {x = xstar}
+        
+        xvec[s]= x
+    }
+    return(xvec)
+}
+
+set.seed(21043)
+out= method1(S)
+hist(out,100,freq=FALSE,main="method 1")
+curve(dexp(x, 1), add=TRUE,col=2,lwd=2) # this method works out fine
+
+
+method2= function(S) {
+    xvec= numeric(S)
+    x=1
+    for (s in 1:S) {
+        # note here we use a diff proposal
+        # normal(xstar; mean= x, sd= 1)*I(xstar> 0)
+        repeat {
+            xstar= x+ rnorm(n= 1, mean= 0, sd= 1)
+            if (xstar> 0)
+                break
+        }
+        
+        # the acceptance ratio is for another target dist., target*I(x>0); see below
+        r= target(xstar)/ target(x)
+
+        if (runif(n= 1)< r ) {x = xstar}
+        
+        xvec[s]= x
+    }
+    return(xvec)
+}
+
+set.seed(21287)
+out=method2(S)
+hist(out,100,freq=FALSE,main="method 2")
+curve(dexp(x, 1), add=TRUE,col=2,lwd=2) 
+# result from truncated sampler is a bit off
+
+# corrected w/ normalizing const.
+constant= 1/(1/2+ exp(1/2)* pnorm(q=0, mean= -1, sd= 1, lower.tail= F))
+hist(out,100,freq=FALSE,main="method 2")
+curve(dexp(x, 1)* pnorm(x)* constant, add=TRUE,col=3,lwd=2) # now it overlaps well
+
+method3= function(S) {
+    xvec= numeric(S)
+    x=1
+    for (s in 1:S) {
+        # note here we use a diff proposal
+        # normal(xstar; mean= x, sd= 1)*I(xstar> 0)
+        repeat {
+            xstar= x+ rnorm(n= 1, mean= 0, sd= 1)
+            if (xstar > 0)
+                break
+        }
+        
+        r= target(xstar)/ target(x)
+        r= r* pnorm(x)/pnorm(xstar)
+        
+        if (runif(n= 1)< r ) {x = xstar}
+
+        xvec[s]= x
+    }
+    return(xvec)
+}
+
+set.seed(21203)
+out=method3(S)
+hist(out,100,freq=FALSE,main="method3")
+curve(dexp(x, 1), add=TRUE,col=2,lwd=2)
+
