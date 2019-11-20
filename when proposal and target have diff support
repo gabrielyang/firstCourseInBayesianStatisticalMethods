@@ -1,7 +1,7 @@
 # Nov 19 2019, warm like spring
 # https://darrenjw.wordpress.com/2012/06/04/metropolis-hastings-mcmc-when-the-proposal-and-target-have-differing-support/
 # on truncated Metropolis-Hastings random walk sampler
-# the target dist. is expon(lambda= 1)
+# the target dist. is expon(lambda= 1), which is known: pi(theta.star)=p(y|theta)*p(theta)
 # proposal dist. is normal truncated to x>0
 
 
