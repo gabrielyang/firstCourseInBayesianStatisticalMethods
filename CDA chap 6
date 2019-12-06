@@ -25,9 +25,11 @@ summary(myfit)
 
 # calc. test stat. and p-value
 z= (coefficients(myfit)[9]/ sqrt(vcov(myfit)[9,9]))^2; z
-# chi-sq test
+
+# chi-sq test (this is a two-sided test)
 pchisq(z, df= 1, lower.tail= F)
-# Z test
+
+# Z test (2-sided Z test)
 2*pnorm(sqrt(z), lower.tail = F)
 
 # can get same results w/ the following
