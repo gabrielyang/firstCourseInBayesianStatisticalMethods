@@ -1,0 +1,40 @@
+# Jan 30 2020, cloudy and cold
+# to create Gaussian mixtures of 1/4* N(-1,1/4)+ 3/4* N(1,1/4)
+
+# introduce a latent variable Z indicating group belonging, and Z ~ bernoulli(p= 1/4)
+# Y|Z=z ~ N(mu_z, sigma_z^2)
+# Y1= N(-1,1/4), Y0= N(1,1/4)
+# Y= Z*Y1+ (1-Z)*Y0
+
+# method 1, create vectors of length n and combine them together
+n= 10000
+p= 0.25
+z= rbinom(n= n, size= 1, prob= p)
+norm1= rnorm(n= n, mean= -1, sd= 1/2)
+norm2= rnorm(n= n, mean= 1, sd= 1/2)
+
+y= z*norm1+ (1-z)* norm2
+
+hist(y, freq= F)
+curve(1/4* dnorm(x, mean= -1, sd= 1/2)+
+      3/4* dnorm(x, mean= 1, sd= 1/2), add=TRUE,col=2,lwd=2)
+      
+
+# method 2, regular method, update row by row for i= 1:n
+n= 10000
+rand.samples= rep(NA,n)
+B= rbinom(n= N, size= 1, prob= p)
+
+for(i in 1: n){
+    if(B[i]== 1){
+        rand.samples[i]= rnorm(n=1 , mean= -1, sd= 1/2)
+    }else if(B[i]== 0){
+        rand.samples[i]= rnorm(n=1 , mean= 1, sd= 1/2)
+    }
+}
+
+hist(rand.samples, freq= F)
+curve(1/4* dnorm(x, mean= -1, sd= 1/2)+
+      3/4* dnorm(x, mean= 1, sd= 1/2), 
+      add=TRUE,col=2,lwd=2)
+
