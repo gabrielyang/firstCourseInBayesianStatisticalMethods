@@ -1,5 +1,6 @@
 # Feb 8 2020, sunny
 # on GP
+# https://distill.pub/2019/visual-exploration-gaussian-processes/
 # reproduce figure like figure 2.2 in GPML textbook page 15
 
 
@@ -75,6 +76,7 @@ x.star= seq(from= -5.5, to= 5.5, length.out = 201)
 # denote f(x.star)=f(x*)=f*
 # draw 100 samples from post. dist of f*|x*, x, f (page 16)
 # here condition on f since y= f+ 0= f (b/c sigma= 0), which is the noise-free obs.
+# The intuition behind this step is that the training points constrain the set of functions to those that pass through the training points.
 
 M= 100
 EB.mat= matrix(NA, nrow= length(x.star), ncol= M)
