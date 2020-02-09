@@ -72,8 +72,10 @@ plot(x= x, y= y)
 # now we have a new input x.star
 x.star= seq(from= -5.5, to= 5.5, length.out = 201)
 
-# denote f(x.star)=f*
-# draw 100 samples from post. dist of f*|f, x, y (page 16)
+# denote f(x.star)=f(x*)=f*
+# draw 100 samples from post. dist of f*|x*, x, f (page 16)
+# here condition on f since y= f+ 0= f (b/c sigma= 0), which is the noise-free obs.
+
 M= 100
 EB.mat= matrix(NA, nrow= length(x.star), ncol= M)
 EB.pred.mat= matrix(NA, nrow= length(x.star), ncol= M)
