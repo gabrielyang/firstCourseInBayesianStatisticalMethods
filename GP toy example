@@ -1,0 +1,133 @@
+# Feb 8 2020, sunny
+# on GP
+
+library("MASS")
+
+# generate covariance matrix for points in `x` using given kernel function
+cov.matrix= function(x, kernel.fn, ...) {
+    # dim(X) rows and dim(Y) cols matrix
+    outer(X= x, Y= x, FUN= function(a, b) {kernel.fn(a, b, ...)})
+}
+
+cov.matrix2= function(x, y, kernel.fn, ...) {
+    # dim(X) rows and dim(Y) cols matrix
+    outer(X= x, Y= y, FUN= function(a, b) {kernel.fn(a, b, ...)})
+}
+
+# given x coordinates, take N draws from kernel function at those points
+drawSamples= function(x, N, seed, kernel.fn, ...) {
+    Y= matrix(NA, nrow= length(x), ncol = N)
+    
+    set.seed(seed)
+    for (n in 1: N) {
+        K= cov.matrix(x, kernel.fn, ...)
+        Y[, n]= mvrnorm(n= 1, mu = rep(0, times= length(x)), Sigma = K)
+    }
+    return(Y)
+}
+
+# x and y are 2 vectors
+se.kernel= function(x, y, sigma.f, l) {
+    return(sigma.f^2 * exp(-(x- y)^2 / (2* l^2)))
+}
+
+se.kernel2= function(x, y, l) {
+    return(exp(-(x- y)^2 / (2* l^2)))
+}
+
+sigma= 0
+sigmaf= 1
+l= 1
+
+x0= seq(-5.5, 5.5, length.out = 1000)  
+
+# what does the prior look like?
+# plot 5 random draws from prior: f ~ N(0, sigmaf^2*K0)
+
+Y1= drawSamples(x= x0, N= 5, kernel.fn = se.kernel, 
+                seed= 21287, sigma.f= sigmaf, l= l)
+col_list= c("blue", "purple", "orange", "chocolate", "green")
+
+plot(range(x0), range(Y1), xlab = "x", ylab = "y", type = "n",
+     main = expression(paste("SE kernel,", sigma[f],"=1, l=1")))
+
+for (n in 1:5) {
+    lines(x0, Y1[, n], col = col_list[n], lwd = 1.5)
+}
+
+# observations: vector x of length 50 and noise-free target f(x) (without + epsilon)
+set.seed(21287)
+x= x0[sample(c(1:length(x0)), 50)]
+
+n= length(x)
+K0= cov.matrix(x= x, kernel.fn= se.kernel2, l= l)
+K= sigmaf^2* K0
+set.seed(21217)
+# noise-free observation, sigma= 0
+y= mvrnorm(n= 1, mu = rep(0, times= n), Sigma = K)
+plot(x= x, y= y)
+
+x.star= seq(from= -5.5, to= 5.5, length.out = 201)
+
+# draw 100 samples from post.
+M= 100
+EB.mat= matrix(NA, nrow= length(x.star), ncol= M)
+EB.pred.mat= matrix(NA, nrow= length(x.star), ncol= M)
+
+# let sigma=0.01 so that the matrix is invertible; should be 0 in this case
+
+set.seed(21295)
+for(s in 1: M) {
+    # specify hyperpara.
+    sigma= 0.01
+    sigmaf= 1
+    l= 1
+    
+    K.xstar.x= cov.matrix2(x= x.star, y= x, 
+                           kernel.fn= se.kernel, sigma.f= sigmaf, l= l)
+    
+    K.x.x= cov.matrix2(x= x, y= x, 
+                       kernel.fn= se.kernel, sigma.f= sigmaf, l= l)
+    
+    K.x.xstar= cov.matrix2(x= x, y= x.star, 
+                           kernel.fn= se.kernel, sigma.f= sigmaf, l= l)
+    
+    K.xstar.xstar= cov.matrix2(x= x.star, y= x.star, 
+                               kernel.fn= se.kernel, sigma.f= sigmaf, l= l)
+    
+    I= diag(length(x))
+    
+    mean.f.star= K.xstar.x %*% solve(K.x.x+ sigma^2* diag(n)) %*% y
+    cov.f.star= K.xstar.xstar- K.xstar.x %*% solve(K.x.x+ sigma^2* diag(n)) %*% K.x.xstar
+    
+    cov.f.star.pred= cov.f.star+ sigma^2* diag(length(x.star))
+    
+    EB.mat[, s]= mvrnorm(n= 1, mu = mean.f.star, Sigma = cov.f.star)
+    
+    EB.pred.mat[, s]= mvrnorm(n= 1, mu = mean.f.star, Sigma = cov.f.star.pred)
+}
+
+postMean2= rowMeans(EB.mat)
+
+postCredInt2= apply(EB.mat, MARGIN= 1, FUN = quantile, probs= c(0.025, 0.975))
+postCredInt2= t(postCredInt2)
+
+predCredInt2= apply(EB.pred.mat, MARGIN= 1, FUN = quantile, probs= c(0.025, 0.975))
+predCredInt2= t(predCredInt2)
+
+EBPlot.df= data.frame(x.star= x.star, mean= postMean2, 
+                      LL= postCredInt2[,1], UL= postCredInt2[,2],
+                      pLL= predCredInt2[,1], pUL= predCredInt2[,2])
+dat2= data.frame(x= x, y= y)
+
+# given a new input x.star, posterior f*|f, x, y is plotted
+# post. draws of f* go through 
+plot(x= x, y= y, pch= 20, col=rgb(0.3,0.5,0.4,0.3), cex= 1.5, 
+     main= "")
+lines(x= x.star, y= EB.mat[,1], col= "pink")
+lines(x= x.star, y= EB.mat[,2], col= "red")
+lines(x= x.star, y= EB.mat[,3], col= "blue")
+
+# lines(x= x.star, y= EBPlot.df$mean, col= "red")
+
+
