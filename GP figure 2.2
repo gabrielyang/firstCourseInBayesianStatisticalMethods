@@ -52,7 +52,7 @@ plot(range(x0), range(Y1), xlab = "x", ylab = "y", type = "n",
      main = expression(paste("SE kernel,", sigma[f],"=1, l=1")))
 
 # draw 5 random samples from prior f(x)~ N(0, K), K= sigma_f^2* K0
-# where K0 is squared expon. kernel
+# where K is squared expon. kernel w/ parameters sigma_f and l
 
 for (n in 1:5) {
     lines(x0, Y1[, n], col = col_list[n], lwd = 1.5)
@@ -73,7 +73,7 @@ plot(x= x, y= y)
 x.star= seq(from= -5.5, to= 5.5, length.out = 201)
 
 # denote f(x.star)=f*
-# draw 100 samples from post. dist of f*|f, x, y
+# draw 100 samples from post. dist of f*|f, x, y (page 16)
 M= 100
 EB.mat= matrix(NA, nrow= length(x.star), ncol= M)
 EB.pred.mat= matrix(NA, nrow= length(x.star), ncol= M)
