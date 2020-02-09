@@ -148,5 +148,17 @@ legend("bottomleft", legend= c("post. mean f", "95% cred. interval"),
        lty= c(1,1), bty= "n")
 
 
+library("reshape2")
+library("ggplot2")
 
+# after observing data, the uncertainty of the prediction using x* (x.star) is small in regions 
+# close to the training data and grows as we move further away from those points.
+# If a predicted point lies on the training data, there is no correlation with other points. Therefore, the function must pass directly through it.
+
+melted_cormat.0= melt(K.xstar.xstar)
+ggplot(data = melted_cormat.0, aes(x=Var1, y=Var2, fill=value)) + 
+    geom_tile()
+melted_cormat.1= melt(cov.f.star)
+ggplot(data = melted_cormat.1, aes(x=Var1, y=Var2, fill=value)) + 
+    geom_tile()
 
