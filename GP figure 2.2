@@ -1,5 +1,7 @@
 # Feb 8 2020, sunny
 # on GP
+# reproduce figure like figure 2.2 in GPML textbook page 15
+
 
 library("MASS")
 
@@ -35,15 +37,13 @@ se.kernel2= function(x, y, l) {
     return(exp(-(x- y)^2 / (2* l^2)))
 }
 
-sigma= 0
+sigma= 0.1
 sigmaf= 1
 l= 1
 
 x0= seq(-5.5, 5.5, length.out = 1000)  
 
 # what does the prior look like?
-# plot 5 random draws from prior: f ~ N(0, sigmaf^2*K0)
-
 Y1= drawSamples(x= x0, N= 5, kernel.fn = se.kernel, 
                 seed= 21287, sigma.f= sigmaf, l= l)
 col_list= c("blue", "purple", "orange", "chocolate", "green")
@@ -51,35 +51,37 @@ col_list= c("blue", "purple", "orange", "chocolate", "green")
 plot(range(x0), range(Y1), xlab = "x", ylab = "y", type = "n",
      main = expression(paste("SE kernel,", sigma[f],"=1, l=1")))
 
+# draw 5 random samples from prior f(x)~ N(0, K), K= sigma_f^2* K0
+# where K0 is squared expon. kernel
+
 for (n in 1:5) {
     lines(x0, Y1[, n], col = col_list[n], lwd = 1.5)
 }
 
-# observations: vector x of length 50 and noise-free target f(x) (without + epsilon)
+# suppose we observed 15 data points of (x, y)
 set.seed(21287)
-x= x0[sample(c(1:length(x0)), 50)]
+x= x0[sample(c(1:length(x0)), 15)]
 
 n= length(x)
 K0= cov.matrix(x= x, kernel.fn= se.kernel2, l= l)
 K= sigmaf^2* K0
-set.seed(21217)
-# noise-free observation, sigma= 0
+set.seed(21207)
 y= mvrnorm(n= 1, mu = rep(0, times= n), Sigma = K)
 plot(x= x, y= y)
 
+# now we have a new input x.star
 x.star= seq(from= -5.5, to= 5.5, length.out = 201)
 
-# draw 100 samples from post.
+# denote f(x.star)=f*
+# draw 100 samples from post. dist of f*|f, x, y
 M= 100
 EB.mat= matrix(NA, nrow= length(x.star), ncol= M)
 EB.pred.mat= matrix(NA, nrow= length(x.star), ncol= M)
 
-# let sigma=0.01 so that the matrix is invertible; should be 0 in this case
-
 set.seed(21295)
 for(s in 1: M) {
     # specify hyperpara.
-    sigma= 0.01
+    sigma= 0.005
     sigmaf= 1
     l= 1
     
@@ -120,14 +122,27 @@ EBPlot.df= data.frame(x.star= x.star, mean= postMean2,
                       pLL= predCredInt2[,1], pUL= predCredInt2[,2])
 dat2= data.frame(x= x, y= y)
 
-# given a new input x.star, posterior f*|f, x, y is plotted
-# post. draws of f* go through 
-plot(x= x, y= y, pch= 20, col=rgb(0.3,0.5,0.4,0.3), cex= 1.5, 
+
+# we can see post. sample path (draws) go through observed data points
+plot(x= x, y= y, pch= 20, col=rgb(0.3,0.5,0.4,0.3), cex= 1.5,
      main= "")
 lines(x= x.star, y= EB.mat[,1], col= "pink")
 lines(x= x.star, y= EB.mat[,2], col= "red")
 lines(x= x.star, y= EB.mat[,3], col= "blue")
 
-# lines(x= x.star, y= EBPlot.df$mean, col= "red")
+
+# plot data points, post. mean and 95% credible intervals 
+plot(x= x, y= y, pch= 20, col=rgb(0.3,0.7,0.4,0.3), cex= 1.5,
+     ylim= c(-2,2), main= "n=15")
+lines(x= x.star, y= EBPlot.df$mean, col= "red")
+lines(x= x.star, y= EBPlot.df$LL, col= "pink")
+lines(x= x.star, y= EBPlot.df$UL, col= "pink")
+#lines(x= x.star, y= EBPlot.df$pLL, col= "pink")
+#lines(x= x.star, y= EBPlot.df$pUL, col= "pink")
+legend("bottomleft", legend= c("post. mean f", "95% cred. interval"), 
+       col= c("red", "pink"),
+       lty= c(1,1), bty= "n")
+
+
 
 
