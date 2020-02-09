@@ -83,7 +83,7 @@ EB.pred.mat= matrix(NA, nrow= length(x.star), ncol= M)
 set.seed(21295)
 for(s in 1: M) {
     # specify hyperpara.
-    sigma= 0.005
+    sigma= 0
     sigmaf= 1
     l= 1
     
@@ -126,7 +126,7 @@ dat2= data.frame(x= x, y= y)
 
 
 # we can see post. sample path (draws) go through observed data points
-plot(x= x, y= y, pch= 20, col=rgb(0.3,0.5,0.4,0.3), cex= 1.5,
+plot(x= x, y= y, pch= 20, col=rgb(0.3,0.7,0.4,0.3), cex= 1.5,
      main= "")
 lines(x= x.star, y= EB.mat[,1], col= "pink")
 lines(x= x.star, y= EB.mat[,2], col= "red")
