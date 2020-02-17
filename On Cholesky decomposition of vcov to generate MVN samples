@@ -36,5 +36,49 @@ cholMVN(mu= mu, Sigma= Sigma)
 mvrnorm(n= 1, mu= mu, Sigma= Sigma)
 
 
+# Simulate some data, Chol for MVN(mu= Q^{-1}l, Sigma= Q^{-1}) form
+library(MASS)
+d = 4; n = 100
+mu_true = rep(0, d); 
+Sigma_true = rWishart(n = 1, 
+                      df = 10, 
+                      Sigma = 1/10*diag(d))[,,1]
+y = mvrnorm(n = n, mu = mu_true, Sigma =Sigma_true)
+dim(y)
+
+# For the error variance, use the sample variance for now:
+Sigma_inv = chol2inv(chol(var(y))) # better than solve()
+
+# Priors: 
+priorSigma_inv = diag(10^-8, d) # prior PRECISION matrix
+prior_theta = rep(0, d) # prior mean
+
+# Quadratic term:
+quadTerm = n*Sigma_inv + priorSigma_inv
+
+# Linear term: (assume y is n x d) 
+ell_theta = Sigma_inv%*%colSums(y) + priorSigma_inv%*%prior_theta
+
+# Cholesky of quadratic term
+Lmat = chol(quadTerm) # NOTE: may have special form, e.g. banded/diagonal
+
+head(Lmat) # This is upper-triangular, so we'll transpose as needed
+
+# And sample:
+a = forwardsolve(t(Lmat), ell_theta)
+e = rnorm(d)
+mu = backsolve(Lmat, a + e)
+
+# Or in one line:
+#mu = backsolve(Lmat, forwardsolve(t(Lmat), ell_theta) + rnorm(length(ell_theta)))
+#---------------------------------------------------------------------------
+
+# quadTerm= Q^{-1}, linTerm= l
+cholMVN2= function(quadTerm, linTerm){
+    Lmat = chol(quadTerm)
+    mu = backsolve(Lmat, forwardsolve(t(Lmat), linTerm) + rnorm(length(linTerm)))
+    return(mu)
+}
+
 
 ```
