@@ -107,10 +107,20 @@ gpCondCalc= function(x, x.star, y, sigma, sigmaf, l) {
 # here condition on f since y= f+ 0= f (b/c sigma= 0), which is the noise-free obs.
 # The intuition behind this step is that the training points constrain the set of functions to those that pass through the training points.
 
+
+# Cholesky decomp. to gen. MVN samples
+cholMVN= function(mu, Sigma) {
+    p= length(mu)
+    L = t(chol(Sigma))
+    # L %*% t(L)
+    z= rnorm(n= p, mean= 0, sd= 1)
+    return(as.vector(L%*% z+ mu))
+}
+
 out= gpCondCalc(x= x, x.star= x.star, y= y, sigma= 0, sigmaf= 1, l= 1)
 mean.f.star= out$mean.f.star
-cov.f.star= out$cov.f.star
-cov.f.star.pred= out$cov.f.star.pred
+cov.f.star= out$cov.f.star+ diag(length(x.star))*10^-8
+cov.f.star.pred= out$cov.f.star.pred+ diag(length(x.star))*10^-8
 
 M= 100
 EB.mat= matrix(NA, nrow= length(x.star), ncol= M)
@@ -118,9 +128,12 @@ EB.pred.mat= matrix(NA, nrow= length(x.star), ncol= M)
 
 set.seed(21295)
 for(s in 1: M) {
-    EB.mat[, s]= mvrnorm(n= 1, mu = mean.f.star, Sigma = cov.f.star)
+    #EB.mat[, s]= mvrnorm(n= 1, mu = mean.f.star, Sigma = cov.f.star)
     
-    EB.pred.mat[, s]= mvrnorm(n= 1, mu = mean.f.star, Sigma = cov.f.star.pred)
+    #EB.pred.mat[, s]= mvrnorm(n= 1, mu = mean.f.star, Sigma = cov.f.star.pred)
+    
+    EB.mat[, s]= cholMVN(mu = mean.f.star, Sigma = cov.f.star)
+    EB.pred.mat[, s]= cholMVN(mu = mean.f.star, Sigma = cov.f.star.pred)
 }
 
 postMean2= rowMeans(EB.mat)
