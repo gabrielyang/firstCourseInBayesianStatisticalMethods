@@ -75,19 +75,8 @@ x.star= seq(from= -5.5, to= 5.5, length.out = 201)
 
 # denote f(x.star)=f(x*)=f*
 # draw 100 samples from post. dist of f*|x*, x, f (page 16)
-# here condition on f since y= f+ 0= f (b/c sigma= 0), which is the noise-free obs.
-# The intuition behind this step is that the training points constrain the set of functions to those that pass through the training points.
 
-M= 100
-EB.mat= matrix(NA, nrow= length(x.star), ncol= M)
-EB.pred.mat= matrix(NA, nrow= length(x.star), ncol= M)
-
-set.seed(21295)
-for(s in 1: M) {
-    # specify hyperpara.
-    sigma= 0
-    sigmaf= 1
-    l= 1
+gpCondCalc= function(x, x.star, y, sigma, sigmaf, l) {
     
     K.xstar.x= cov.matrix2(x= x.star, y= x, 
                            kernel.fn= se.kernel, sigma.f= sigmaf, l= l)
@@ -108,6 +97,27 @@ for(s in 1: M) {
     
     cov.f.star.pred= cov.f.star+ sigma^2* diag(length(x.star))
     
+    return(list(mean.f.star= mean.f.star, cov.f.star= cov.f.star,
+                cov.f.star.pred= cov.f.star.pred))
+}
+
+# for a given dataset (x_i, y_i), i=1,2,...,n, and a given grid of test input/points,
+# the following quantities are fixed, and thus we can compute in advance and use them directly in generating MVN samples
+
+# here condition on f since y= f+ 0= f (b/c sigma= 0), which is the noise-free obs.
+# The intuition behind this step is that the training points constrain the set of functions to those that pass through the training points.
+
+out= gpCondCalc(x= x, x.star= x.star, y= y, sigma= 0, sigmaf= 1, l= 1)
+mean.f.star= out$mean.f.star
+cov.f.star= out$cov.f.star
+cov.f.star.pred= out$cov.f.star.pred
+
+M= 100
+EB.mat= matrix(NA, nrow= length(x.star), ncol= M)
+EB.pred.mat= matrix(NA, nrow= length(x.star), ncol= M)
+
+set.seed(21295)
+for(s in 1: M) {
     EB.mat[, s]= mvrnorm(n= 1, mu = mean.f.star, Sigma = cov.f.star)
     
     EB.pred.mat[, s]= mvrnorm(n= 1, mu = mean.f.star, Sigma = cov.f.star.pred)
@@ -128,11 +138,12 @@ dat2= data.frame(x= x, y= y)
 
 
 # we can see post. sample path (draws) go through observed data points
-plot(x= x, y= y, pch= 20, col=rgb(0.3,0.7,0.4,0.3), cex= 1.5,
-     main= "")
-lines(x= x.star, y= EB.mat[,1], col= "pink")
-lines(x= x.star, y= EB.mat[,2], col= "red")
-lines(x= x.star, y= EB.mat[,3], col= "blue")
+plot(x= x, y= y, pch= 20, col=rgb(0.3,0.7,0.4,0.7), cex= 1.5,
+     main= "", ylim= c(-3,3))
+lines(x= x.star, y= EB.mat[,10], col= "pink")
+lines(x= x.star, y= EB.mat[,11], col= "red")
+lines(x= x.star, y= EB.mat[,12], col= "blue")
+
 
 
 # plot data points, post. mean and 95% credible intervals 
