@@ -1,0 +1,127 @@
+# Feb 13 2020
+# on bayesian binary probit regression
+# https://rpubs.com/cakapourani/bayesian-binary-probit-model
+# https://rpubs.com/cakapourani/bayesian-bpr-model
+
+calcProb= function(x) {
+    exp(x)/(1+ exp(x))
+}
+
+
+# simulate data from logisit function P(Y=1)= exp(-2+6*x)/(1+ exp(-2+6*x))
+# simulate one dataset
+# sample size
+n= 100
+# dim of reg. parameters
+p= 2
+set.seed(2)
+x= runif(n= n, min= 0, max= 1)
+xb= -2+ 6*x
+
+pi.x= calcProb(x= xb)
+
+set.seed(21218)
+y= rbinom(n= n, size= 1, prob= pi.x)
+
+fit= glm(y ~ x, family= "binomial")
+summary(fit)  # -2.3435  6.7426
+
+
+
+
+
+n1= sum(y)  # Number of successes
+n0= n - n1  # Number of failures
+
+X= matrix(c(rep(1, n), x), ncol= p)
+
+require("mvtnorm")
+require("truncnorm")
+
+# Conjugate prior on the coefficients beta ~ N(beta_0, Q_0)
+beta.0= rep(0, p)
+Q.0= diag(10, p)
+
+# Initialize parameters
+beta= rep(0, p)
+z= rep(0, n)
+
+# Number of simulations for Gibbs sampler
+S= 15000 
+# Burn in period
+nBurnin= 5000
+# Matrix storing samples of the \theta parameter
+post.beta= matrix(NA, nrow = S, ncol = p)
+
+# ---------------------------------
+# Gibbs sampling algorithm
+# ---------------------------------
+# Compute posterior variance of beta
+# X'X,crossprod(X, X))= t(X)%*% X
+Q.beta= t(X)%*% X+ solve(Q.0)
+Q.beta.inv= solve(Q.beta)
+
+set.seed(21218)
+for (s in 1: S) {
+    # Update Mean of z
+    mu_z= X %*% beta
+    # Draw latent variable z from its full conditional: z | \beta, y, X
+    z[y == 0]= rtruncnorm(n0, mean = mu_z[y == 0], sd = 1, a = -Inf, b = 0)
+    z[y == 1]= rtruncnorm(n1, mean = mu_z[y == 1], sd = 1, a = 0, b = Inf)
+    
+    # Compute posterior mean of theta
+    M = Q.beta.inv %*% (t(X) %*% z+ solve(Q.0)%*% beta.0)
+    # Draw variable \theta from its full conditional: \theta | z, X
+    beta= c(rmvnorm(n= 1, mean= M, sigma= Q.beta.inv))
+    
+    # Store the \theta draws
+    post.beta[s, ] = beta
+}
+
+# ---------------------------
+# Get posterior mean of \theta
+# ---------------------------
+postMean= colMeans(post.beta[-(1: nBurnin), ]); postMean
+
+fit= glm(y ~ x, family = binomial(link = probit))
+summary(fit)
+mle.beta= fit$coefficients; mle.beta
+
+
+
+
+
+### appendix
+
+set.seed(20287)
+# sample size
+n= 100
+# dim of reg. parameters
+p= 3
+x1= runif(n= n, min= 0, max= 1)
+x2= runif(n= n, min= 0, max= 1)
+
+xb= -2+ 6*x1+ 3*x2
+
+calcProb= function(x) {
+    return(exp(xb)/(1+ exp(xb)))
+}
+
+pi.x= calcProb(x= xb)
+
+set.seed(21218)
+y= rbinom(n= n, size= 1, prob= pi.x)
+
+fit= glm(y ~ x1+ x2, family= "binomial")
+summary(fit)
+
+# make prediction w/ intercept= 0
+newX= data.frame(cbind(rep(0, n), x1, x2))
+a0= predict(fit, newdata = newX, type = c("link"))- coefficients(fit)[1]
+a1= as.matrix(newX) %*% coefficients(fit)
+all.equal(as.vector(a0), as.vector(a1))
+
+# calc. SE
+sqrt(diag(as.matrix(newX) %*% vcov(fit)  %*% t(as.matrix(newX))))
+
+
