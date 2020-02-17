@@ -1,5 +1,6 @@
 # Feb 16 2020, cloudy and warm and humid
 # https://stephens999.github.io/fiveMinuteStats/mvnorm.html
+# https://stats.stackexchange.com/questions/46523/how-to-simulate-artificial-data-for-logistic-regression
 
 Aim: to generate samples from MVN(mu, \Sigma), where mu is of dimension p
 
