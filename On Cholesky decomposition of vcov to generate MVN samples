@@ -73,7 +73,7 @@ mu = backsolve(Lmat, a + e)
 #mu = backsolve(Lmat, forwardsolve(t(Lmat), ell_theta) + rnorm(length(ell_theta)))
 #---------------------------------------------------------------------------
 
-# quadTerm= Q^{-1}, linTerm= l
+# quadTerm= Q, linTerm= l
 cholMVN2= function(quadTerm, linTerm){
     Lmat = chol(quadTerm)
     mu = backsolve(Lmat, forwardsolve(t(Lmat), linTerm) + rnorm(length(linTerm)))
