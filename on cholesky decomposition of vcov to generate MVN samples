@@ -1,0 +1,39 @@
+# Feb 16 2020, cloudy and warm and humid
+# https://stephens999.github.io/fiveMinuteStats/mvnorm.html
+
+Aim: to generate samples from MVN(mu, \Sigma), where mu is of dimension p
+
+(1) LL^T= \Sigma
+(2) Z~ N_p(0, I)
+(3) mu+ LZ ~ MVN(mu, \Sigma) (since LZ ~ N(0, LIL^T)=N(0, LL^T)= N(0, \Sigma); mu+ LZ ~ MVN(mu, \Sigma))
+
+
+```{r}
+library("MASS")
+
+mu= c(1,2,3)
+Sigma = rbind(c(3,1,1),c(1,3, 2), c(4,2,6)); Sigma
+L = t(chol(Sigma))
+L
+# LL^T
+L %*% t(L)
+
+z= rnorm(n= 3, mean= 0, sd= 1)
+# gen. one sample from MVN(mu, Sigma)
+L%*% z+ mu
+
+cholMVN= function(mu, Sigma) {
+    p= length(mu)
+    L = t(chol(Sigma))
+    # L %*% t(L)
+    z= rnorm(n= p, mean= 0, sd= 1)
+    return(as.vector(L%*% z+ mu))
+}
+
+cholMVN(mu= mu, Sigma= Sigma)
+
+mvrnorm(n= 1, mu= mu, Sigma= Sigma)
+
+
+
+```
