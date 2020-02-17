@@ -69,24 +69,23 @@ for (s in 1: S) {
     z[y == 0]= rtruncnorm(n0, mean = mu_z[y == 0], sd = 1, a = -Inf, b = 0)
     z[y == 1]= rtruncnorm(n1, mean = mu_z[y == 1], sd = 1, a = 0, b = Inf)
     
-    # Compute posterior mean of theta
+    # Compute posterior mean of beta
     M = Q.beta.inv %*% (t(X) %*% z+ solve(Q.0)%*% beta.0)
-    # Draw variable \theta from its full conditional: \theta | z, X
+    # Draw variable \beta from its full conditional: \beta | z, X
     beta= c(rmvnorm(n= 1, mean= M, sigma= Q.beta.inv))
     
-    # Store the \theta draws
+    # Store the \beta draws
     post.beta[s, ] = beta
 }
 
 # ---------------------------
-# Get posterior mean of \theta
+# Get posterior mean of \beta
 # ---------------------------
 postMean= colMeans(post.beta[-(1: nBurnin), ]); postMean
 
 fit= glm(y ~ x, family = binomial(link = probit))
 summary(fit)
 mle.beta= fit$coefficients; mle.beta
-
 
 
 
