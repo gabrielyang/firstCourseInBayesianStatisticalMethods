@@ -2,7 +2,8 @@
 
 # model: theta_t= rho* theta_{t-1}+ e_i, e_i ~ N(0, 1^2)
 # theta_t ~ N(rho* theta_{t-1}, 1), its invariant dist. is N(0, 1/(1-rho^2))
-# 
+# from above, we can see: if theta_{t-1}~ N(0, 1/(1-rho^2)), theta_t ~ N(0, 1/(1-rho^2))
+# and thus this is a Markov chain
 
 rho= 1/2
 N= 10000
@@ -21,6 +22,6 @@ genValue= function(theta0, rho, S){
 
 samp1= genValue(theta0= 0, rho= rho, S= 10000)
 hist(samp1, col=rgb(1, 0, 0,0.5), freq= F)
-hist(rnorm(n= 10000, mean= 0, sd= sqrt(1/(1-rho^2))), col=rgb(0,0,1,0.5), 
+hist(rnorm(n= N, mean= 0, sd= sqrt(1/(1-rho^2))), col=rgb(0,0,1,0.5), 
      freq= F, add=T)
 
