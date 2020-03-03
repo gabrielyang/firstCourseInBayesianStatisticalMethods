@@ -1,0 +1,26 @@
+# Mar 3 2020, cloudy and spring-like warm
+
+# model: theta_t= rho* theta_{t-1}+ e_i, e_i ~ N(0, 1^2)
+# theta_t ~ N(rho* theta_{t-1}, 1), its invariant dist. is N(0, 1/(1-rho^2))
+# 
+
+rho= 1/2
+N= 10000
+e= rnorm(n= N, mean= 0, sd= 1)
+
+theta.vec= c()
+genValue= function(theta0, rho, S){
+    theta= theta0
+    
+    for(s in 1: S){
+        theta= rnorm(n= 1, mean= rho* theta, sd= 1)
+        theta.vec= c(theta.vec, theta)
+    }
+    return(theta.vec)
+}
+
+samp1= genValue(theta0= 0, rho= rho, S= 10000)
+hist(samp1, col=rgb(1, 0, 0,0.5), freq= F)
+hist(rnorm(n= 10000, mean= 0, sd= sqrt(1/(1-rho^2))), col=rgb(0,0,1,0.5), 
+     freq= F, add=T)
+
