@@ -4,3 +4,113 @@
 # https://www.r-bloggers.com/gaussian-process-regression-with-r/
 # https://www.r-bloggers.com/a-glimpse-on-gaussian-process-regression/
 # http://juliejosse.com/wp-content/uploads/2018/07/LectureNotesMissing.html#2)_ml_inference_with_missing_values
+
+# a func. to calc. logLik
+compute.logLik= function(w, mu, sigma, y) {
+    K= length(w)
+    aa= sapply(c(1:K), function(x) 
+        {w[x]* dnorm(x= y, mean= mu[x], sd= sigma[x]) } )
+    return(sum(log(rowSums(aa))))
+}
+
+
+calc.gamma.zi.k= function(w, mu, sigma, y) {
+    #n= length(y)
+    K= length(w)
+    #gamma.zi.k.mat= matrix(NA, ncol= K, nrow= n)
+    
+    gamma.zi.k.mat= sapply(c(1:K), function(k) {
+        w[k]*dnorm(x= y, mean= mu[k], sd= sigma[k])
+    } )
+    gamma.zi.k.mat= gamma.zi.k.mat/ rowSums(gamma.zi.k.mat)
+    
+    return(gamma.zi.k.mat)
+}
+
+# E step, calc. expectation of complete data logLik
+E.step= function(w, mu, sigma, y) {
+    K= length(w)
+    
+    gamma.zi.k= calc.gamma.zi.k(w= w, mu= mu, sigma= sigma, y= y)
+
+    aa= sapply(c(1:K), function(k) {
+        gamma.zi.k[,k]* log(w[k])+ 
+        gamma.zi.k[,k]*dnorm(x= y, mean= mu[k], sd= sigma[k], log= T) } )
+    return(sum(rowSums(aa)))
+}
+
+# maximize para. for complete data logLik
+M.step= function(w, mu, sigma, y) {
+    K= length(w)
+    n= length(y)
+    
+    gamma.zi.k= calc.gamma.zi.k(w= w, mu= mu, sigma= sigma, y= y)
+    
+    N.k= colSums(gamma.zi.k)
+    
+    mu= sapply(c(1:K), function(k) {
+        sum(gamma.zi.k[,k]* y)/N.k[k] } )
+    sigma.sq= sapply(c(1:K), function(k) {
+        sum(gamma.zi.k[,k]* (y- mu[k])^2)/N.k[k] } )
+    sigma= sqrt(sigma.sq)
+    w= N.k/n
+    return(list(mu= mu, sigma= sigma, w= w))
+}
+
+# specify initial values
+init= list(w= c(0.2, 0.8), mu= c(1, 2), sigma= c(1/2, 1/3))
+
+# init= initial values
+# y= data points (a vector)
+# epsilon= error margin
+run.EM= function(init, y, epsilon= 1e-6) {
+    # initial values
+    w= init$w
+    mu= init$mu
+    sigma= init$sigma
+    
+    ll.vec= c()
+    ll= compute.logLik(w= w, mu= mu, sigma= sigma, y= y)
+    ll.vec= c(ll.vec, ll)
+    
+    diff.ll= 1
+    count= 0
+    
+    # since logLik is likely to be neg., take absolute values!
+    while(abs(diff.ll)> epsilon) {
+        gamma.zi.k= calc.gamma.zi.k(w= w, mu= mu, sigma= sigma, y= y)
+        
+        # E step
+        ll= E.step(w= w, mu= mu, sigma= sigma, y= y)
+        
+        # M step
+        param= M.step(w= w, mu= mu, sigma= sigma, y= y)
+        mu= param$mu; mu
+        sigma= param$sigma; sigma
+        w= param$w; w
+        
+        ll.vec= c(ll.vec, ll)
+        count= count+ 1
+        diff.ll= ll.vec[count+1]- ll.vec[count]
+    }
+    logLik= compute.logLik(w= w, mu= mu, sigma= sigma, y= y)
+    
+    return(list(logLik= logLik, mu= mu, sigma= sigma, w= w, iter= count))
+    
+}
+
+
+set.seed(21205)
+y= true.F(n= 10000)
+
+hist(y, breaks= 'Scott', freq= F)
+grid= seq(from= min(y), to= max(y), length.out = 500)
+lines(x= grid,y= 0.25*dnorm(grid,5, 1.5)+0.75*dnorm(grid,10,2),
+      col= 2, lwd= 2)
+
+out= run.EM(init= init, y= y, epsilon= 1e-7)
+print(c(out$mu, out$sigma, out$w, out$logLik, out$iter))
+
+# true logLik 
+compute.logLik(w= c(1/4, 3/4), mu= c(5, 10), sigma= c(1.5, 2), y= y)
+
