@@ -93,6 +93,7 @@ run.EM= function(init, y, epsilon= 1e-6) {
         count= count+ 1
         diff.ll= ll.vec[count+1]- ll.vec[count]
     }
+    # calc. logLik of data (instead of expectation of complete data logLik)
     logLik= compute.logLik(w= w, mu= mu, sigma= sigma, y= y)
     
     return(list(logLik= logLik, mu= mu, sigma= sigma, w= w, iter= count))
@@ -100,6 +101,7 @@ run.EM= function(init, y, epsilon= 1e-6) {
 }
 
 
+# simulate some data
 set.seed(21205)
 y= true.F(n= 10000)
 
@@ -110,7 +112,9 @@ lines(x= grid,y= 0.25*dnorm(grid,5, 1.5)+0.75*dnorm(grid,10,2),
 
 out= run.EM(init= init, y= y, epsilon= 1e-7)
 print(c(out$mu, out$sigma, out$w, out$logLik, out$iter))
+# [1]     10.031132      4.999786      1.982725      1.460170      0.745716
+# [6]      0.254284 -24330.981864    333.000000
 
 # true logLik 
-compute.logLik(w= c(1/4, 3/4), mu= c(5, 10), sigma= c(1.5, 2), y= y)
+compute.logLik(w= c(1/4, 3/4), mu= c(5, 10), sigma= c(1.5, 2), y= y) # -24332.88
 
