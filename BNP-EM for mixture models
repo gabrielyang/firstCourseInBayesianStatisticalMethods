@@ -9,7 +9,7 @@
 compute.logLik= function(w, mu, sigma, y) {
     K= length(w)
     aa= sapply(c(1:K), function(x) 
-        {w[x]* dnorm(x= y, mean= mu[x], sd= sigma[x]) } )
+    {w[x]* dnorm(x= y, mean= mu[x], sd= sigma[x]) } )
     return(sum(log(rowSums(aa))))
 }
 
@@ -32,10 +32,10 @@ E.step= function(w, mu, sigma, y) {
     K= length(w)
     
     gamma.zi.k= calc.gamma.zi.k(w= w, mu= mu, sigma= sigma, y= y)
-
+    
     aa= sapply(c(1:K), function(k) {
         gamma.zi.k[,k]* log(w[k])+ 
-        gamma.zi.k[,k]*dnorm(x= y, mean= mu[k], sd= sigma[k], log= T) } )
+            gamma.zi.k[,k]*dnorm(x= y, mean= mu[k], sd= sigma[k], log= T) } )
     return(sum(rowSums(aa)))
 }
 
@@ -69,19 +69,20 @@ run.EM= function(init, y, epsilon= 1e-6) {
     mu= init$mu
     sigma= init$sigma
     
+    # vector of expected complete data logLik, for monitoring convergence
+    exp.ll.vec= c()
+    # vector to store logLik of observed data
     ll.vec= c()
-    ll= compute.logLik(w= w, mu= mu, sigma= sigma, y= y)
-    ll.vec= c(ll.vec, ll)
     
-    diff.ll= 1
+    diff.exp.ll= 1
     count= 0
     
     # since logLik is likely to be neg., take absolute values!
-    while(abs(diff.ll)> epsilon) {
+    while(abs(diff.exp.ll)> epsilon) {
         gamma.zi.k= calc.gamma.zi.k(w= w, mu= mu, sigma= sigma, y= y)
         
         # E step
-        ll= E.step(w= w, mu= mu, sigma= sigma, y= y)
+        exp.ll= E.step(w= w, mu= mu, sigma= sigma, y= y)
         
         # M step
         param= M.step(w= w, mu= mu, sigma= sigma, y= y)
@@ -89,14 +90,20 @@ run.EM= function(init, y, epsilon= 1e-6) {
         sigma= param$sigma; sigma
         w= param$w; w
         
-        ll.vec= c(ll.vec, ll)
+        exp.ll.vec= c(exp.ll.vec, exp.ll)
         count= count+ 1
-        diff.ll= ll.vec[count+1]- ll.vec[count]
+        
+        if(count> 1) {
+            diff.exp.ll= exp.ll.vec[count]- exp.ll.vec[count-1]
+        }
+        
+        # calc. logLik of data (instead of expectation of complete data logLik)
+        logLik= compute.logLik(w= w, mu= mu, sigma= sigma, y= y)
+        ll.vec= c(ll.vec, logLik)
     }
-    # calc. logLik of data (instead of expectation of complete data logLik)
-    logLik= compute.logLik(w= w, mu= mu, sigma= sigma, y= y)
     
-    return(list(logLik= logLik, mu= mu, sigma= sigma, w= w, iter= count))
+    return(list(logLik.vec= ll.vec, mu= mu, sigma= sigma, 
+                w= w, iter= count, logLik= ll.vec[count]))
     
 }
 
@@ -116,5 +123,10 @@ print(c(out$mu, out$sigma, out$w, out$logLik, out$iter))
 # [6]      0.254284 -24330.981864    333.000000
 
 # true logLik 
-compute.logLik(w= c(1/4, 3/4), mu= c(5, 10), sigma= c(1.5, 2), y= y) # -24332.88
+ll.truth= compute.logLik(w= c(1/4, 3/4), mu= c(5, 10), sigma= c(1.5, 2), y= y) # -24332.88
+ll.truth
+
+plot(x= c(1:out$iter), y= out$logLik.vec, pch= 20,
+     xlab= "iterations", ylab= "logLik")
+abline(h= ll.truth, lty= 2, col= 'red', lwd= 2)
 
