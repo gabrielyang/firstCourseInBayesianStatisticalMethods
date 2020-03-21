@@ -7,6 +7,35 @@
 # http://www.cse.psu.edu/~rtc12/CSE586/lectures/EMLectureFeb3.pdf
 # http://sia.webpopix.org/mixtureModels.html
 
+
+w= c(0.2, 0.3, 0.5)
+mu= c(-1, 0, 1)
+var= c(0.2, 1, 0.4)
+
+# a func. to calc. mean and variance of a known normal mixture model
+calc4GM= function(w, mu, var) {
+    EY= sum(w* mu)
+    VarY= sum(w*(mu^2+ var))- (sum(w*mu))^2 
+    return(list(mean= EY, var= VarY))
+}
+
+out= calc4GM(w= w, mu= mu, var= var)
+out
+
+true.F= function(n) {
+    y1= rnorm(n= n, mean= -1, sd= sqrt(0.2))
+    y2= rnorm(n= n, mean= 0, sd= sqrt(1))
+    y3= rnorm(n= n, mean= 1, sd= sqrt(0.4))
+    Z= t(rmultinom(n= n, size= 1, prob= c(0.2, 0.3, 0.5)))
+    y= Z[,1]* y1+ Z[,2]*y2+ Z[,3]*y3
+    return(y)
+}
+
+y= true.F(n= 10000)
+mean(y) # 0.296875
+var(y) # 1.157576
+
+
 # a func. to calc. logLik
 compute.logLik= function(w, mu, sigma, y) {
     K= length(w)
