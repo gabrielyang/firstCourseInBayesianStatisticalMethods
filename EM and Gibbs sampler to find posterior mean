@@ -1,5 +1,5 @@
 # Mar 26 2020
-
+# using Gibbs sampler and EM algo. to find posterior mean (variance as a nuisance parameter)
 
 calc4Mu= function(y, mu0, tau, tau0) {
     n= length(y)
@@ -11,7 +11,8 @@ calc4Mu= function(y, mu0, tau, tau0) {
 set.seed(21287)
 n= 1000
 y= rnorm(n= n, mean= 5, sd= 1)
-hist(y)
+hist(y, freq= F)
+curve(dnorm(x, mean= 5, sd= 1), lwd= 2, col= 2, add= T)
 
 mu0= 2
 tau0= 1/2
@@ -21,7 +22,7 @@ S= 10000
 post.mu= numeric(S)
 post.tau= numeric(S)
 
-init1= list(mu= 0, tau= 2)
+init1= list(mu= 100, tau= 5)
 
 runGibbs= function(S, init, y, mu0, tau0, nBurnin) {
     n= length(y)
@@ -35,18 +36,18 @@ runGibbs= function(S, init, y, mu0, tau0, nBurnin) {
         post.mu[s]= mu
         post.tau[s]= tau
     }
-    return(list(post.mu= post.mu[-nBurnin], 
-                post.tau= post.tau[-nBurnin]))
+    return(list(post.mu= post.mu[-c(1:nBurnin)], 
+                post.tau= post.tau[-c(1:nBurnin)]))
     
 }
 
 set.seed(21201)
-out.Gibbs= runGibbs(S= 2*S, init= init1, y= y, mu0= mu0, tau0= tau0, 
-                    nBurnin= S)
+out.Gibbs= runGibbs(S= 2*10^4, init= init1, y= y, mu0= mu0, tau0= tau0, 
+                    nBurnin= 10^4)
 plot(as.ts(out.Gibbs$post.mu))
 plot(as.ts(out.Gibbs$post.tau))
-mean(out.Gibbs$post.mu) # 4.996025
-mean(1/out.Gibbs$post.tau) # 1.000138
+mean(out.Gibbs$post.mu) #  4.995631
+mean(1/out.Gibbs$post.tau) # 1.000062
 
 # method 2, EM algo.
 EMUpdate= function(y, mu0, tau0, mu) {
@@ -56,8 +57,8 @@ EMUpdate= function(y, mu0, tau0, mu) {
     return(mu.new)
 }
 
-
-runEM= function(y, init, mu0, tau0, epsilon) {
+# (1) use abs(rel.diff)<epsilon as stopping rule
+runEM.1= function(y, init, mu0, tau0, epsilon) {
     mu.vec= c()
     n= length(y)
     mu= init$mu
@@ -78,5 +79,32 @@ runEM= function(y, init, mu0, tau0, epsilon) {
     return(list(mu= mu.vec))
 }
 
-out.EM= runEM(y= y, init= init1, mu0= mu0, tau0= tau0, epsilon=1e-10)
-out.EM$mu[length(out.EM$mu)]
+out.EM.1= runEM.1(y= y, init= init1, mu0= mu0, tau0= tau0, epsilon=1e-10)
+out.EM.1$mu
+out.EM.1$mu[length(out.EM.1$mu)]
+
+# (2) use abs(diff)<epsilon as stopping rule
+runEM.2= function(y, init, mu0, tau0, epsilon) {
+    mu.vec= c()
+    n= length(y)
+    mu= init$mu
+    tau= init$tau
+    count= 0
+    diff= 1
+    
+    while(abs(diff)> epsilon) {
+        mu= EMUpdate(y= y, mu0= mu0, tau0= tau0, mu= mu)
+        mu.vec= c(mu.vec, mu)
+        if(count> 1) {
+            diff= mu.vec[count]- mu.vec[count-1]
+            #rel.diff= (mu.vec[count]- mu.vec[count-1])/mu.vec[count-1]
+        }
+        count= count+ 1
+    }
+    return(list(mu= mu.vec))
+}
+
+out.EM.2= runEM.2(y= y, init= init1, mu0= mu0, tau0= tau0, epsilon=1e-10)
+out.EM.2$mu
+out.EM.2$mu[length(out.EM.2$mu)]
+
