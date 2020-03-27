@@ -1,0 +1,82 @@
+# Mar 26 2020
+
+
+calc4Mu= function(y, mu0, tau, tau0) {
+    n= length(y)
+    Q= n* tau+ tau0
+    l= tau* sum(y)+ tau0* mu0
+    return(c(Q^-1*l, Q))
+}
+
+set.seed(21287)
+n= 1000
+y= rnorm(n= n, mean= 5, sd= 1)
+hist(y)
+
+mu0= 2
+tau0= 1/2
+
+# method 1, Gibbs sampler
+S= 10000
+post.mu= numeric(S)
+post.tau= numeric(S)
+
+init1= list(mu= 0, tau= 2)
+
+runGibbs= function(S, init, y, mu0, tau0, nBurnin) {
+    n= length(y)
+    mu= init$mu
+    tau= init$tau
+    
+    for(s in 1: S) {
+        muPara= calc4Mu(y= y, mu0= mu0, tau= tau, tau0= tau0)
+        mu= rnorm(n= 1, mean= muPara[1], sd= sqrt(1/muPara[2]))
+        tau= 1/ rgamma(n= 1, shape= n/2, rate= 1/2* sum((y-mu)^2) )
+        post.mu[s]= mu
+        post.tau[s]= tau
+    }
+    return(list(post.mu= post.mu[-nBurnin], 
+                post.tau= post.tau[-nBurnin]))
+    
+}
+
+set.seed(21201)
+out.Gibbs= runGibbs(S= 2*S, init= init1, y= y, mu0= mu0, tau0= tau0, 
+                    nBurnin= S)
+plot(as.ts(out.Gibbs$post.mu))
+plot(as.ts(out.Gibbs$post.tau))
+mean(out.Gibbs$post.mu) # 4.996025
+mean(1/out.Gibbs$post.tau) # 1.000138
+
+# method 2, EM algo.
+EMUpdate= function(y, mu0, tau0, mu) {
+    a= tau0* mu0+ n*sum(y)/sum((y-mu)^2)
+    b= n* n/sum((y-mu)^2)+tau0
+    mu.new= a/b
+    return(mu.new)
+}
+
+
+runEM= function(y, init, mu0, tau0, epsilon) {
+    mu.vec= c()
+    n= length(y)
+    mu= init$mu
+    tau= init$tau
+    count= 0
+    #diff= 1
+    rel.diff= 1
+    
+    while(abs(rel.diff)> epsilon) {
+        mu= EMUpdate(y= y, mu0= mu0, tau0= tau0, mu= mu)
+        mu.vec= c(mu.vec, mu)
+        if(count> 1) {
+            #diff= mu.vec[count]- mu.vec[count-1]
+            rel.diff= (mu.vec[count]- mu.vec[count-1])/mu.vec[count-1]
+        }
+        count= count+ 1
+    }
+    return(list(mu= mu.vec))
+}
+
+out.EM= runEM(y= y, init= init1, mu0= mu0, tau0= tau0, epsilon=1e-10)
+out.EM$mu[length(out.EM$mu)]
