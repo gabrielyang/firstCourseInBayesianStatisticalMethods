@@ -1,0 +1,71 @@
+# Jun 17 2020, sunny and cloudy
+# Gibbs sampler for multivariate normal dist.
+# textbook p112-114
+
+library("MASS")
+require("mvtnorm")
+# http://www2.stat.duke.edu/~pdh10/FCBS/Replication/
+load("reading.RData")
+dim(reading) # 22 2
+
+# y| theta, Sigma ~ MVN(theta, Sigma)
+
+# theta ~ MVN(mu0, L0)
+mu0= c(50, 50)
+L0= matrix(c(625, 312.5, 312.5, 625), nrow= 2, ncol= 2)
+L0
+
+# Sigma ~ Inv-Wishart(nu0, S0^-1)
+nu0= 4
+S0= L0; S0
+n= nrow(reading)
+
+
+# num. of iterations
+S= 10000
+Y= reading
+theta.mat= c()
+Sigma.mat= c()
+ypred.mat= c()
+
+L0.inv= solve(L0); 
+L0.inv
+ybar= apply(Y, 2, mean); ybar
+# colMeans(Y)
+
+Sigma= cov(Y)
+
+set.seed(21208)
+for(s in 1: S) {
+    # for theta vector
+    Sigma.inv= solve(Sigma)
+    Q= L0.inv+ n* Sigma.inv
+    l= L0.inv %*% mu0+ n* Sigma.inv%*% ybar
+    Q.inv= solve(Q)
+    theta= c(rmvnorm(n= 1, mean= Q.inv%*% l, sigma= Q.inv))
+    
+    # for Sigma matrix
+    nu.n= nu0+ n
+    S.theta= t(Y- theta)%*% (Y- theta)
+    S.n= S0+ S.theta
+    Sigma= solve(rwish(nu.n, solve(S.n)))
+    
+    # post. pred. dist (PPD)
+    y.pred= c(rmvnorm(n= 1, mean= theta, sigma= Sigma))
+    
+    # save samples
+    theta.mat= rbind(theta.mat, theta)
+    Sigma.mat= rbind(Sigma.mat, Sigma)
+    ypred.mat= rbind(ypred.mat, y.pred)
+}
+
+quantile(theta.mat[,2]- theta.mat[,1], prob= c(0.025,1/2, 0.975))
+mean(theta.mat[,2]> theta.mat[,1]) # 0.9858
+mean(ypred.mat[,2]> ypred.mat[,1]) # 0.6893
+
+# make coutour plot
+require("hdrcde")
+hdrinfo= hdrcde::hdr.2d(x=theta.mat[,1], y= theta.mat[,2])
+plot(hdrinfo, show.points = F, xlab= expression(paste(theta[1])),
+     ylab= expression(paste(theta[2])))
+abline(a=0, b=1,lty= 2 )
