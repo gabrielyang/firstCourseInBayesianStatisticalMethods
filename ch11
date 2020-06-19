@@ -1,0 +1,159 @@
+# Jun 18 2020
+# textbook p198
+
+# chap 11
+load("nelsSES.RData")
+
+# num of schools
+length(unique(nels$sch_id)) # 100
+ids= sort(unique(nels$sch_id)) 
+m= length(ids); m
+
+# Y is a list storing Y_ij for each school j
+Y= list() ; 
+# X is the corresponding design matrix
+X= list() ; 
+# N is a vector storing sample size of school j
+N= NULL
+
+# get outcome and predictor for each school
+for(j in 1:m) {
+    Y[[j]]= nels[nels$sch_id== ids[j], 4] 
+    N[j]= sum(nels$sch_id== ids[j])
+    xj= nels[nels$sch_id== ids[j], 3] 
+    # center the predictor at its mean
+    xj= (xj- mean(xj))
+    # add a col. for intercept => design matrix
+    X[[j]]<-cbind(rep(1,N[j]), xj )
+}
+
+# S2.LS is a vector storing 
+S2.LS= NULL
+BETA.LS = NULL
+
+for(j in 1: m) {
+    # suppress intercept
+    fit= lm(Y[[j]]~ -1+X[[j]] )
+    #print(summary(fit))
+    BETA.LS= rbind(BETA.LS, c(fit$coef)) 
+    S2.LS= c(S2.LS, summary(fit)$sigma^2) 
+} 
+
+dim(BETA.LS) # 100   2
+length(S2.LS) # 100
+
+plot(x= range(nels[,3]),y= range(nels[,4]),type="n",xlab="SES", 
+     ylab="math score")
+for(j in 1:m) {    
+    # y= a+b*x
+    abline(a= BETA.LS[j,1], b= BETA.LS[j,2],col="gray")  
+}
+
+# avg. reg. coeff. across schools
+BETA.MLS= apply(BETA.LS,2,mean);
+BETA.MLS
+abline(a= BETA.MLS[1],b= BETA.MLS[2], lwd=2, col= 2)
+
+plot(x= N, y= BETA.LS[,1], xlab="sample size",ylab="intercept")
+abline(h= BETA.MLS[1],col="black",lwd=2, lty= 2)
+plot(x= N, y= BETA.LS[,2],xlab="sample size",ylab="slope")
+abline(h= BETA.MLS[2],col="black",lwd=2, lty= 2)
+
+
+library("mvtnorm")
+library("monomvn")
+# Bayes. hier model
+# no. of param.
+p= dim(X[[1]])[2]; p
+
+theta= apply(BETA.LS, 2, mean)
+mu0= apply(BETA.LS, 2, mean)
+nu0= 1 ; 
+s2= s20= mean(S2.LS)
+eta0= p+2; 
+Sigma= S0= L0= cov(BETA.LS);
+Sigma
+BETA= BETA.LS # 100 2
+
+THETA.b= S2.b<-NULL
+# inverse of Lambda0
+inv.L0= solve(L0) ; 
+# inverse of Sigma
+inv.Sigma= solve(Sigma)
+Sigma.ps= matrix(0,p,p)
+SIGMA.PS= NULL
+BETA.ps= BETA*0
+BETA.pp= NULL
+
+mu0[2]+c(-1.96,1.96)*sqrt(L0[2,2])
+
+S= 10^4
+## MCMC
+for(s in 1:S) {
+    ##update beta_j 
+    for(j in 1:m) {  
+        Qj= inv.Sigma + t(X[[j]]) %*% X[[j]]/s2
+        lj= inv.Sigma %*% theta + 1/s2* t(X[[j]]) %*% Y[[j]] 
+        inv.Qj= solve(Qj)
+        BETA[j,]= mvtnorm::rmvnorm(n=1, 
+                                   mean= inv.Qj%*% lj, 
+                                   sigma= inv.Qj) 
+    } 
+    ##
+    
+    ##update theta
+    Q2=  inv.L0 +  m* inv.Sigma
+    #l2= inv.L0 %*% mu0 + inv.Sigma %*% apply(BETA, 2, sum)
+    l2= inv.L0 %*% mu0 + inv.Sigma %*% colSums(BETA)
+    inv.Q2= solve(Q2)
+    theta= c(mvtnorm::rmvnorm(n= 1,
+                              mean= inv.Q2%*% l2, 
+                              sigma= inv.Q2))
+    ##
+    
+    ##update Sigma
+    mtheta= matrix(theta, nrow= m, ncol= p, byrow= T)
+    S.n= t(BETA-mtheta)%*% (BETA-mtheta)
+    inv.Sigma= monomvn::rwish(v= eta0+m, S= solve(S0+ S.n) )
+    ##
+    
+    ##update s2
+    RSS= 0
+    for(j in 1:m) { 
+        RSS= RSS+ sum( (Y[[j]]-X[[j]]%*%BETA[j,] )^2 ) 
+    }
+    s2= 1/rgamma(1, shape= 1/2*(nu0+sum(N)), 
+                 rate= 1/2* (nu0*s20+RSS) )
+    ##
+    ##store results
+    S2.b= c(S2.b, s2);
+    THETA.b= rbind(THETA.b, theta)
+    Sigma.ps= Sigma.ps+solve(inv.Sigma) ; 
+    BETA.ps= BETA.ps+ BETA
+    SIGMA.PS= rbind(SIGMA.PS, c(solve(inv.Sigma)))
+    # PPD
+    BETA.pp= rbind(BETA.pp,
+             mvtnorm::rmvnorm(1, theta, solve(inv.Sigma)) )
+    ##
+}
+
+
+plot(density(THETA.b[,2],adj=2),xlim=range(BETA.pp[,2]), 
+     main="",xlab="slope parameter",ylab="posterior density",lwd=2)
+lines(density(BETA.pp[,2],adj=2),col="gray",lwd=2)
+legend( -3 ,1.0 ,legend=c( expression(theta[2]),expression(tilde(beta)[2])), 
+        lwd=c(2,2),col=c("black","gray"),bty="n") 
+
+quantile(THETA.b[,2],prob=c(0.025, 0.5, 0.975))
+mean(BETA.pp[,2]<0) 
+
+BETA.PM= BETA.ps/S
+
+plot(range(nels[,3]),range(nels[,4]),type="n",xlab="SES",
+      ylab="math score")
+
+for(j in 1:m) {    
+    abline(a= BETA.PM[j,1], b= BETA.PM[j,2],col="grey")  
+}
+abline(a= mean(THETA.b[,1]), b= mean(THETA.b[,2]), lwd=2, 
+       col= 2, lty= 2)
