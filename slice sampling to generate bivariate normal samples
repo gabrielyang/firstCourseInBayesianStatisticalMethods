@@ -45,6 +45,10 @@ var(samples2)  # 0.9992631 0.2396646  0.2396646 0.9017071
 vcv # 1 0.25 0.25 1
 
 plot(samples2[,1]~ samples2[,2], pch = 19, cex = 0.2, col = "#00000055", asp = 1)
+# trace plots
+plot(as.ts(samples2[seq(1, 10^4, by= 2), 1]))
+plot(as.ts(samples2[seq(1, 10^4, by= 2), 2]))
+
 
 # use slice sampler w/ 1 value (univariate case) generated at a time
 samples3= NULL
@@ -64,5 +68,7 @@ var(samples3[,])  # 0.9770810 0.2603585 0.2603585 0.9140857
 # true variance and covariance
 vcv # 1 0.25 0.25 1
 plot(samples3[,1]~ samples3[,2], pch = 19, cex = 0.2, col = "#00000055", asp = 1)
-
+# trace plots
+plot(as.ts(samples3[seq(1, 10^4, by= 2), 1]))
+plot(as.ts(samples3[seq(1, 10^4, by= 2), 2]))
 
