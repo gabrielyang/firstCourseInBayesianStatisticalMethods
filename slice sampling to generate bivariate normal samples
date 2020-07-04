@@ -37,11 +37,32 @@ target.density= function(x, mean, vcv) {
 }
 
 set.seed(21204)
-samples2= MfU.Sample.Run(c(0,0), f= target.density, uni.sampler="slice", 
-              mean= c(0,0), vcv= vcv, nsmp= 10^4)
-# estimated var. and cov.
-var(samples2) 
+samples2= MfUSampler::MfU.Sample.Run(c(0,0), f= target.density, uni.sampler="slice", 
+          mean= c(0,0), vcv= vcv, nsmp= 10^4)
+# estimated var. and cov.; very close to true vcov
+var(samples2)  # 0.9992631 0.2396646  0.2396646 0.9017071
 # true vcov
-vcv
+vcv # 1 0.25 0.25 1
 
 plot(samples2[,1]~ samples2[,2], pch = 19, cex = 0.2, col = "#00000055", asp = 1)
+
+# use slice sampler w/ 1 value (univariate case) generated at a time
+samples3= NULL
+set.seed(21201)
+a= c(0,0)
+# when using slice sampler w/ 1 sample generated each time,
+# we need to update initial values
+for(i in 1: 10^4) {
+    x= MfU.Sample(a, f= target.density, uni.sampler="slice", 
+                  mean= c(0,0), vcv= vcv)
+    samples3= rbind(samples3, x)
+    # Update initial values 
+    a= x
+}
+# sample variance and covariance
+var(samples3[,])  # 0.9770810 0.2603585 0.2603585 0.9140857
+# true variance and covariance
+vcv # 1 0.25 0.25 1
+plot(samples3[,1]~ samples3[,2], pch = 19, cex = 0.2, col = "#00000055", asp = 1)
+
+
