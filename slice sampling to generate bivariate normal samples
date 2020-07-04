@@ -22,6 +22,8 @@ curve(dnorm, xlim = range(samples$X1), ylim = c(0, 0.5), col = "red")
 hist(samples$X1, 30, add = TRUE, freq = FALSE)
 
 plot(X2 ~ X1, samples, pch = 19, cex = 0.2, col = "#00000055", asp = 1)
+plot(as.ts(samples[seq(1, 10^4, by= 2), 2]))
+plot(as.ts(samples[seq(1, 10^4, by= 2), 3]))
 
 var(samples[2:3])
 
