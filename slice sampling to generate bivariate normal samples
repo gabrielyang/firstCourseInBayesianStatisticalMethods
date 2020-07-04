@@ -1,0 +1,47 @@
+// Jul 3 2020, sunny and windy
+
+##### method 1
+
+# log lik. as a func. of scalar/ vector x
+make.mvn <- function(mean, vcv) {
+    # x is a vector of same dimension to mean
+    function(x) {
+        -1/2* log(det(vcv))- 1/2*t(x- mean) %*% solve(vcv) %*% (x- mean)
+    }
+}
+
+vcv= matrix(c(1, 0.25, 0.25, 0.9), 
+            nrow= 2, ncol= 2, byrow= T); vcv
+lik= make.mvn(c(0, 0), vcv)
+
+require("diversitree")
+set.seed(21205)
+samples <- diversitree::mcmc(lik, x.init= c(0, 0), 
+           nsteps= 10000, w= 1, print.every = 1000)
+curve(dnorm, xlim = range(samples$X1), ylim = c(0, 0.5), col = "red")
+hist(samples$X1, 30, add = TRUE, freq = FALSE)
+
+plot(X2 ~ X1, samples, pch = 19, cex = 0.2, col = "#00000055", asp = 1)
+
+var(samples[2:3])
+
+
+##### method 2
+
+# slice sampler from MfUSampler
+library("MfUSampler")
+
+# target density: p(x; mean, vcv)
+target.density= function(x, mean, vcv) {
+    -1/2* log(det(vcv))- 1/2*t(x-mean) %*% solve(vcv) %*% (x-mean)
+}
+
+set.seed(21204)
+samples2= MfU.Sample.Run(c(0,0), f= target.density, uni.sampler="slice", 
+              mean= c(0,0), vcv= vcv, nsmp= 10^4)
+# estimated var. and cov.
+var(samples2) 
+# true vcov
+vcv
+
+plot(samples2[,1]~ samples2[,2], pch = 19, cex = 0.2, col = "#00000055", asp = 1)
