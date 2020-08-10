@@ -1,0 +1,36 @@
+# Aug 11 2020, hot, and warm-wet
+
+
+# log of target dens.
+# this density has mean= 0, var= 1 (multimodal)
+p.log <- function(x, mean1= -1, sd1= 1/2, mean2= 1, sd2= 1/2) {
+    log(1/4*dnorm(x= x, mean=mean1, sd= sd1)+ 
+        3/4*dnorm(x= x, mean=mean2, sd= sd2) )
+}
+
+# uni-modal
+p.log= function(x, mean= 0, sd= 1) {
+  dnorm(x, mean= mean, sd= sd, log= T)
+}
+
+# (1) slice sampling
+points = MfUSampler::MfU.Sample.Run(x= runif(n=1), 
+         f= p.log,  uni.sampler= "slice", nsmp= 1e4,
+         mean1= -1, sd1= 1/2, mean2= 1, sd2= 1/2,
+         control = MfUSampler::MfU.Control(n= 1,
+         slice.lower= -4, slice.upper= 4))
+    
+hist(points, freq= F, breaks=50, ylab="density",
+     main="Slice Sampling of mixed normal")
+curve(exp(p.log(x)), from = -4, to = 4, add= T)
+
+# (2) arms
+indFun= function(x, mean1, sd1, mean2, sd2) {
+    (x>-4)* (x<4)
+}
+points2= HI::arms(y.start= runif(n=1), myldens = p.log,
+                  indFunc = indFun, n.sample = 1e4)
+
+hist(points2, freq= F, breaks=50, ylab="density",
+     main="arms of mixed normal")
+curve(exp(p.log(x)), from = -4, to = 4, add= T)
