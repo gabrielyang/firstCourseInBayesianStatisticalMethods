@@ -1,0 +1,92 @@
+# Sept 12 2021
+# applying the EM algorithm to find MLE for Gaussian mixture models
+# https://stephens999.github.io/fiveMinuteStats/intro_to_em.html
+
+# mixture components
+mu.true = c(0, 5)
+sigma.true = c(1, 1)
+
+# determine Z_i
+Z = sample(1:2, size= 120, replace=T, prob= c(0.6,0.4))
+# sample from mixture model
+
+X <- rnorm(n= 120, mean=mu.true[Z], sd=sigma.true[Z])
+hist(X,breaks=15)
+
+EM.iter= function(pi, mu, sigma2, x) {
+    n= length(x)
+    K= length(pi)
+    # matrix to store P(Z_i = k | x_i)
+    gamma_z_mat= matrix(NA, nrow= n, ncol= K)
+    
+    # E step
+    # compute P(Z_i = k | x_i)
+    for(i in 1:n) {
+        gamma_z_mat[i,]= sapply(1:K, function(k) {
+            pi[k]*dnorm(x= x[i], mean= mu[k], sd= sqrt(sigma2[k]))
+        })
+        
+        gamma_z_mat[i,]= gamma_z_mat[i,]/sum(gamma_z_mat[i,])
+    }
+    
+    # M step
+    mu= sapply(1:K, function(k) {
+        1/sum(gamma_z_mat[,k])*sum(gamma_z_mat[,k]*x)
+    })
+    
+    sigma2= sapply(1:K, function(k) {
+        1/sum(gamma_z_mat[,k])* sum(gamma_z_mat[,k]*(x-mu[k])^2)
+    })
+    
+    pi= sapply(1:K, function(k) {
+        sum(gamma_z_mat[,k])/n
+    })
+    
+    # compute logLik
+    lik_k= matrix(NA, nrow= n, ncol= K)
+    for(i in 1: n) {
+        lik_k[i,]= sapply(1:K, function(k) {
+            pi[k]* dnorm(x= x[i], mean= mu[k], sd= sqrt(sigma2[k]))
+        })
+    }
+    # the logLik
+    ll= sum(log(rowSums(lik_k)))
+    
+    return(list(mu= mu, sigma2= sigma2, pi= pi, ll= ll))
+}
+
+runEM= function(initLst, x, delta= 1e-5) {
+    # extract initial parameter values
+    pi= initLst$pi
+    mu= initLst$mu
+    sigma2= initLst$sigma2
+        
+    ll_vec= NULL
+    ll_diff= 1
+    cnt= 1
+    while(ll_diff > delta) {
+        res= EM.iter(pi= pi, mu= mu, sigma2= sigma2, x= x)
+        pi= res$pi
+        mu= res$mu
+        sigma2= res$sigma2
+        ll_vec[cnt]= res$ll
+        if(cnt>= 2) {
+            ll_diff= abs( (ll_vec[cnt]- ll_vec[cnt-1])/ll_vec[cnt] )
+        }
+        cnt= cnt+ 1
+    }
+    return(list(res= res, ll= ll_vec))
+}
+
+out= runEM(initLst=list(pi=c(0.5,0.5), 
+                        mu=rnorm(n=2, mean= mean(X),sd=sd(X)),
+                        sigma2= c(8, 8)), x= X, delta= 1e-5) 
+out$res
+
+xx= seq(-8, 11, length= 200)
+yy.true= 0.6*dnorm(x= xx, mean= 0, sd= 1)+ 0.4* dnorm(x= xx, mean=5, sd= 1)
+yy= out$res$pi[1]* dnorm(x=xx,mean= out$res$mu[1],sd=sqrt(out$res$sigma2[1]))+
+    out$res$pi[2]* dnorm(x=xx,mean= out$res$mu[2],sd=sqrt(out$res$sigma2[2]))
+plot(xx, yy, type= 'l')
+lines(xx, yy.true, col= 2, lty= 2)
+
