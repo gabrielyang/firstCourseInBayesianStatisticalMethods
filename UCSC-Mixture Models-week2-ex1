@@ -1,0 +1,77 @@
+# Sept 13 2021
+# mixture models of zero-inflated Poisson
+
+
+
+dat1= read.csv(file= "week2.csv", header= T)
+X= dat1$X4
+barplot(table(X))
+
+EM.iter= function(pi, mu, x) {
+    n= length(x)
+    K= length(pi)
+    # matrix to store P(Z_i = k | x_i)
+    gamma_z_mat= matrix(NA, nrow= n, ncol= K)
+    
+    # E step
+    # compute P(Z_i = k | x_i)
+    for(i in 1:n) {
+        if(x[i]== 0) {
+            gamma_z_mat[i,1]= pi[1]
+            gamma_z_mat[i,2]= pi[2]* dpois(x= x[i], lambda= mu)
+        }
+        else {
+            gamma_z_mat[i,1]= 0
+            gamma_z_mat[i,2]= 1
+        }
+        #gamma_z_mat[i,1]= ifelse(x[i]==0, pi[1], 0)
+        #gamma_z_mat[i,2]= ifelse(x[i]==0, pi[2]*dpois(x= x[i], lambda= mu), 1)
+        gamma_z_mat[i,]= gamma_z_mat[i,]/sum(gamma_z_mat[i,])
+    }
+    
+    # M step
+    mu= 1/sum(gamma_z_mat[,2])*sum(gamma_z_mat[,2]*x)
+
+    pi= sapply(1:K, function(k) {
+        sum(gamma_z_mat[,k])/n
+    })
+    
+    # compute QQ (Ez|x log P(X,Z|theta))
+    QQ_k= matrix(NA, nrow= n, ncol= K)
+    for(i in 1: n) {
+        # since the density for each Z_i group is different,
+        # write down separately
+        QQ_k[i,1]= gamma_z_mat[i,1]* log(pi[1])
+        QQ_k[i,2]= gamma_z_mat[i,2]* (log(pi[2])+ dpois(x= x[i], lambda= mu,log=T))
+        
+    }
+    QQ= sum(rowSums(QQ_k))
+    
+    return(list(mu= mu, pi= pi, QQ= QQ))
+}
+
+
+runEM= function(initLst, x, delta= 1e-5) {
+    # extract initial parameter values
+    pi= initLst$pi
+    mu= initLst$mu
+
+    QQ_vec= NULL
+    QQ_reldiff= 1
+    cnt= 1
+    while(QQ_reldiff > delta) {
+        res= EM.iter(pi= pi, mu= mu, x= x)
+        pi= res$pi
+        mu= res$mu
+        QQ_vec[cnt]= res$QQ
+        if(cnt>= 2) {
+            QQ_reldiff= abs( (QQ_vec[cnt]- QQ_vec[cnt-1])/QQ_vec[cnt] )
+        }
+        cnt= cnt+ 1
+    }
+    return(list(res= res, QQ= QQ_vec))
+}
+
+out= runEM(initLst=list(pi=c(0.5,0.5), mu= mean(X)), x= X, delta= 1e-5) 
+out$res
+plot(out$QQ)
