@@ -3,14 +3,14 @@
 # https://stephens999.github.io/fiveMinuteStats/intro_to_em.html
 
 # mixture components
-mu.true = c(0, 5)
-sigma.true = c(1, 1)
+mu.true = c(5, 10)
+sigma.true = c(1,1.5)
 
 # determine Z_i
-Z = sample(1:2, size= 120, replace=T, prob= c(0.6,0.4))
+Z = sample(0:1, size= 1000, replace=T, prob= c(0.75,0.25))
 # sample from mixture model
 
-X <- rnorm(n= 120, mean=mu.true[Z], sd=sigma.true[Z])
+X <- rnorm(n= 1000, mean=mu.true[Z+1], sd=sigma.true[Z+1])
 hist(X,breaks=15)
 
 EM.iter= function(pi, mu, sigma2, x) {
@@ -44,15 +44,19 @@ EM.iter= function(pi, mu, sigma2, x) {
     
     # compute logLik
     lik_k= matrix(NA, nrow= n, ncol= K)
+    QQ_k= matrix(NA, nrow=n, ncol= K)
     for(i in 1: n) {
         lik_k[i,]= sapply(1:K, function(k) {
             pi[k]* dnorm(x= x[i], mean= mu[k], sd= sqrt(sigma2[k]))
         })
+        QQ_k[i,]= sapply(1:K, function(k) {
+            gamma_z_mat[i,k]* (log(pi[k])+  dnorm(x= x[i], mean= mu[k], sd= sqrt(sigma2[k]),log= T))
+        })
     }
     # the logLik
     ll= sum(log(rowSums(lik_k)))
-    
-    return(list(mu= mu, sigma2= sigma2, pi= pi, ll= ll))
+    QQ= sum(rowSums(QQ_k))    
+    return(list(mu= mu, sigma2= sigma2, pi= pi, ll= ll, QQ= QQ))
 }
 
 runEM= function(initLst, x, delta= 1e-5) {
@@ -62,31 +66,38 @@ runEM= function(initLst, x, delta= 1e-5) {
     sigma2= initLst$sigma2
         
     ll_vec= NULL
-    ll_diff= 1
+    QQ_vec= NULL
+    QQ_reldiff= 1
     cnt= 1
-    while(ll_diff > delta) {
+    while(QQ_reldiff > delta) {
         res= EM.iter(pi= pi, mu= mu, sigma2= sigma2, x= x)
         pi= res$pi
         mu= res$mu
         sigma2= res$sigma2
         ll_vec[cnt]= res$ll
+        QQ_vec[cnt]= res$QQ
         if(cnt>= 2) {
-            ll_diff= abs( (ll_vec[cnt]- ll_vec[cnt-1])/ll_vec[cnt] )
+            QQ_reldiff= abs( (QQ_vec[cnt]- QQ_vec[cnt-1])/QQ_vec[cnt] )
         }
         cnt= cnt+ 1
     }
-    return(list(res= res, ll= ll_vec))
+    return(list(res= res, ll= ll_vec, QQ= QQ_vec))
 }
 
 out= runEM(initLst=list(pi=c(0.5,0.5), 
                         mu=rnorm(n=2, mean= mean(X),sd=sd(X)),
                         sigma2= c(8, 8)), x= X, delta= 1e-5) 
 out$res
+# convergence plot
+plot(out$QQ, type= 'p')
 
-xx= seq(-8, 11, length= 200)
-yy.true= 0.6*dnorm(x= xx, mean= 0, sd= 1)+ 0.4* dnorm(x= xx, mean=5, sd= 1)
+
+xx= seq(-5, 11, length= 200)
+yy.true= 0.75*dnorm(x= xx, mean= 5, sd= 1)+ 0.25* dnorm(x= xx, mean=10, sd= 1.5)
 yy= out$res$pi[1]* dnorm(x=xx,mean= out$res$mu[1],sd=sqrt(out$res$sigma2[1]))+
     out$res$pi[2]* dnorm(x=xx,mean= out$res$mu[2],sd=sqrt(out$res$sigma2[2]))
-plot(xx, yy, type= 'l')
+plot(xx, yy, type= 'l', xlab= 'x', ylab= "Density")
 lines(xx, yy.true, col= 2, lty= 2)
+legend("topright", legend= c("truth", "EM fit"),
+       lty= c(1,2), col= c(1,2), bty= 'n')
 
